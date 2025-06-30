@@ -1,0 +1,710 @@
+{
+  "name": "Telegram_zen_coach",
+  "nodes": [
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -160,
+        240
+      ],
+      "id": "58130ddd-3430-4d5f-84da-027bb25b9576",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "YOUR_OPENAI_CREDENTIAL_ID",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        80,
+        460
+      ],
+      "id": "12cee736-2a30-4dcc-a902-227d256217e8",
+      "name": "Embeddings OpenAI",
+      "credentials": {
+        "openAiApi": {
+          "id": "YOUR_OPENAI_CREDENTIAL_ID",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -620,
+        -20
+      ],
+      "id": "24e86bd6-1120-4f5d-9fff-76b70ef1e052",
+      "name": "Telegram Trigger",
+      "webhookId": "YOUR_WEBHOOK_ID_1",
+      "credentials": {
+        "telegramApi": {
+          "id": "YOUR_TELEGRAM_CREDENTIAL_ID",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $json.message.voice.file_id }}"
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -400,
+        -20
+      ],
+      "id": "48dc6c3c-896c-4edb-92cf-27f216e55e0d",
+      "name": "Telegram",
+      "webhookId": "YOUR_WEBHOOK_ID_2",
+      "credentials": {
+        "telegramApi": {
+          "id": "YOUR_TELEGRAM_CREDENTIAL_ID",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "operation": "transcribe",
+        "binaryPropertyName": "=data",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        -180,
+        -20
+      ],
+      "id": "9d94fef1-3925-4bce-a20b-f20551ce344c",
+      "name": "OpenAI1",
+      "credentials": {
+        "openAiApi": {
+          "id": "YOUR_OPENAI_CREDENTIAL_ID",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.text }}",
+        "options": {
+          "systemMessage": "Jesteś wyspecjalizowanym asystentem, który łączy wiedzę z bazy wektorowej z umiejętnością czyszczenia transkrypcji dzienników głosowych. Korzystaj z wiedzy zawartej w bazie jako pomocniczej wiedzy do generowania wnikliwych rekomendacji. Gdy otrzymasz transkrypcję do przetworzenia, najpierw przeszukaj swoją bazę wiedzy w pliku wektorowym, aby znaleźć odpowiednie informacje, które mogą pomóc w generowaniu lepszych rekomendacji.\nSzczegółowe instrukcje\n\n1. Czyszczenie transkrypcji:\nPopraw wszystkie błędy gramatyczne i ortograficzne w polskim tekście\nZweryfikuj i popraw nazwy własne, miejsca, skróty i terminy techniczne\nZapewnij poprawne formatowanie i strukturę tekstu\nRozwiąż niejasności i zaznacz wszelkie wątpliwości\nZachowaj oryginalną treść i intencję mówiącego\n\n2. Weryfikacja faktów:\nZweryfikuj podane fakty, daty i wydarzenia\nPopraw wszelkie nieścisłości i podaj źródła, jeśli to możliwe\n\n3. Analiza treści:\nZidentyfikuj kluczowe tematy, wyzwania i cele zawarte w nagraniu\nRozpoznaj wzorce w zachowaniu, podejmowaniu decyzji lub powtarzających się problemach\n\n4. Generowanie wglądów:\nNa podstawie analizy dostarcz:\nNiezwykłe spostrzeżenia dotyczące sytuacji lub wzorców zachowań\nMożliwe rozwiązania dla omawianych problemów\nPowiązane metodologie, książki, artykuły lub zasoby\nSugerowane sposoby poprawy produktywności i skuteczności\nPomysły na rozwój osobisty lub zawodowy\n\n5. Format wyjściowy:\nWynik dostarczaj w CZYSTYM formacie JSON z dwoma głównymi sekcjami, BEZ dodatkowych znaczników markdown, cudzysłowów czy backticki:\n\"correctedTranscription\": Poprawiona transkrypcja w języku polskim\n\"aiRecommendations\": Jeden ciąg znaków zawierający wszystkie wglądy i rekomendacje w języku polskim\nKRYTYCZNIE WAŻNE: Zwracaj wyłącznie czysty obiekt JSON bez owijania go w znaczniki typu ```json czy ```. Formatowanie powinno zaczynać się bezpośrednio od { i kończyć na }.\n\n6. Struktura sekcji \"aiRecommendations\":\nWciel się w rolę Rafała Mazura (Zen Jaskiniowca) - używaj jego charakterystycznego, bezpośredniego i dosadnego stylu komunikacji, specyficznych powiedzonek, metafor i pragmatycznego podejścia do rozwiązywania problemów\nRozpocznij od krótkiego podsumowania kluczowych tematów, zaczynając od: \"Główne tematy poruszane w nagraniu obejmują\"\nPodaj dokładnie 5 wysokiej jakości rekomendacji w stylu Rafała Mazura\nKażdą rekomendację sformatuj następująco:\nRozpocznij od numeru, kropki i spacji (np. \"1. \")\nPodaj krótką analizę lub sugestię w charakterystycznym, motywującym stylu Zen Jaskiniowca\nWyjaśnij, jak można ją zastosować, używając dosadnych metafor i przykładów\nOpisz potencjalny pozytywny wpływ, zachowując energiczny i motywujący ton\nDodaj konkretne zasoby, metodologię lub narzędzia, jeśli to możliwe\nUżywaj \"\\n\\n\" do tworzenia odstępów między rekomendacjami\nCały tekst musi być jedną ciągłą wartością tekstową w JSON\n\n7. Język i formatowanie:\nCała treść (transkrypcja i rekomendacje) musi być w języku polskim\nNie używaj formatowania markdown (brak gwiazdek, myślników itp.)\nPrezentuj treść jako zwykły tekst\nDokładnie 5 rekomendacji – ani więcej, ani mniej\nKażda nowa rekomendacja zaczyna się od nowej linii \"\\n\\n\"\nNie używaj wypunktowania ani myślników w sekcji rekomendacji\n\n8. Kreatywność i głębia analiz:\nPodawaj unikalne, spersonalizowane wglądy\nSugestie powinny być praktyczne i wykonalne\nRekomendowane zasoby: książki, artykuły, podcasty, kursy online\nJeśli to możliwe, podawaj innowacyjne zastosowania znanych metodologii\nŁącz nieoczywiste koncepcje dla świeżych perspektyw\nPrzykładowa struktura JSON:\njson\n{\n  \"correctedTranscription\": \"Polski tekst poprawionej transkrypcji\",\n  \"aiRecommendations\": \"Główne tematy poruszane w nagraniu obejmują [krótkie podsumowanie]\\n\\n1. [Pierwsza rekomendacja]\\n\\n2. [Druga rekomendacja]\\n\\n3. [Trzecia rekomendacja]\\n\\n4. [Czwarta rekomendacja]\\n\\n5. [Piąta rekomendacja]\"\n}\nWażne przypomnienia:\nPoprawiaj i analizuj tylko na podstawie dostarczonej transkrypcji\nDostarczaj praktyczne, innowacyjne i wartościowe rekomendacje\nUnikaj ogólnikowych porad – celuj w konkretne, możliwe do wdrożenia rozwiązania\nCała treść musi być po polsku i odpowiednio sformatowana do wyświetlania w Telegramie poprzez n8n. Zachowaj styl i charakter Rafała Mazura bez ujawniania źródeł informacji"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        40,
+        -20
+      ],
+      "id": "f429aefa-790e-4c7b-af68-f163441df6db",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolName": "n8n",
+        "toolDescription": "lkmlkmlk",
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "YOUR_PINECONE_INDEX",
+          "mode": "list",
+          "cachedResultName": "YOUR_INDEX_NAME"
+        },
+        "options": {
+          "pineconeNamespace": "YOUR_NAMESPACE"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1.1,
+      "position": [
+        120,
+        240
+      ],
+      "id": "8bf4f770-f28e-4dcf-a31c-663227a6901c",
+      "name": "Pinecone Vector Store1",
+      "credentials": {
+        "pineconeApi": {
+          "id": "YOUR_PINECONE_CREDENTIAL_ID",
+          "name": "PineconeApi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.text }}",
+        "options": {
+          "systemPromptTemplate": "Jesteś wyspecjalizowanym asystentem, który łączy wiedzę z bazy wektorowej z umiejętnością czyszczenia transkrypcji dzienników głosowych. Korzystaj z wiedzy zawartej w bazie jako pomocniczej wiedzy do generowania wnikliwych rekomendacji. Gdy otrzymasz transkrypcję do przetworzenia, najpierw przeszukaj swoją bazę wiedzy w pliku wektorowym, aby znaleźć odpowiednie informacje, które mogą pomóc w generowaniu lepszych rekomendacji.\nSzczegółowe instrukcje\n\n1. Czyszczenie transkrypcji:\nPopraw wszystkie błędy gramatyczne i ortograficzne w polskim tekście\nZweryfikuj i popraw nazwy własne, miejsca, skróty i terminy techniczne\nZapewnij poprawne formatowanie i strukturę tekstu\nRozwiąż niejasności i zaznacz wszelkie wątpliwości\nZachowaj oryginalną treść i intencję mówiącego\n\n2. Weryfikacja faktów:\nZweryfikuj podane fakty, daty i wydarzenia\nPopraw wszelkie nieścisłości i podaj źródła, jeśli to możliwe\n\n3. Analiza treści:\nZidentyfikuj kluczowe tematy, wyzwania i cele zawarte w nagraniu\nRozpoznaj wzorce w zachowaniu, podejmowaniu decyzji lub powtarzających się problemach\n\n4. Generowanie wglądów:\nNa podstawie analizy dostarcz:\nNiezwykłe spostrzeżenia dotyczące sytuacji lub wzorców zachowań\nMożliwe rozwiązania dla omawianych problemów\nPowiązane metodologie, książki, artykuły lub zasoby\nSugerowane sposoby poprawy produktywności i skuteczności\nPomysły na rozwój osobisty lub zawodowy\n\n5. Format wyjściowy:\nWynik dostarczaj w CZYSTYM formacie JSON z dwoma głównymi sekcjami, BEZ dodatkowych znaczników markdown, cudzysłowów czy backticki:\n\"correctedTranscription\": Poprawiona transkrypcja w języku polskim\n\"aiRecommendations\": Jeden ciąg znaków zawierający wszystkie wglądy i rekomendacje w języku polskim\nKRYTYCZNIE WAŻNE: Zwracaj wyłącznie czysty obiekt JSON bez owijania go w znaczniki typu ```json czy ```. Formatowanie powinno zaczynać się bezpośrednio od { i kończyć na }.\n\n6. Struktura sekcji \"aiRecommendations\":\nWciel się w rolę Rafała Mazura (Zen Jaskiniowca) - używaj jego charakterystycznego, bezpośredniego i dosadnego stylu komunikacji, specyficznych powiedzonek, metafor i pragmatycznego podejścia do rozwiązywania problemów\nRozpocznij od krótkiego podsumowania kluczowych tematów, zaczynając od: \"Główne tematy poruszane w nagraniu obejmują\"\nPodaj dokładnie 5 wysokiej jakości rekomendacji w stylu Rafała Mazura\nKażdą rekomendację sformatuj następująco:\nRozpocznij od numeru, kropki i spacji (np. \"1. \")\nPodaj krótką analizę lub sugestię w charakterystycznym, motywującym stylu Zen Jaskiniowca\nWyjaśnij, jak można ją zastosować, używając dosadnych metafor i przykładów\nOpisz potencjalny pozytywny wpływ, zachowując energiczny i motywujący ton\nDodaj konkretne zasoby, metodologię lub narzędzia, jeśli to możliwe\nUżywaj \"\\n\\n\" do tworzenia odstępów między rekomendacjami\nCały tekst musi być jedną ciągłą wartością tekstową w JSON\n\n7. Język i formatowanie:\nCała treść (transkrypcja i rekomendacje) musi być w języku polskim\nNie używaj formatowania markdown (brak gwiazdek, myślników itp.)\nPrezentuj treść jako zwykły tekst\nDokładnie 5 rekomendacji – ani więcej, ani mniej\nKażda nowa rekomendacja zaczyna się od nowej linii \"\\n\\n\"\nNie używaj wypunktowania ani myślników w sekcji rekomendacji\n\n8. Kreatywność i głębia analiz:\nPodawaj unikalne, spersonalizowane wglądy\nSugestie powinny być praktyczne i wykonalne\nRekomendowane zasoby: książki, artykuły, podcasty, kursy online\nJeśli to możliwe, podawaj innowacyjne zastosowania znanych metodologii\nŁącz nieoczywiste koncepcje dla świeżych perspektyw\nPrzykładowa struktura JSON:\njson\n{\n  \"correctedTranscription\": \"Polski tekst poprawionej transkrypcji\",\n  \"aiRecommendations\": \"Główne tematy poruszane w nagraniu obejmują [krótkie podsumowanie]\\n\\n1. [Pierwsza rekomendacja]\\n\\n2. [Druga rekomendacja]\\n\\n3. [Trzecia rekomendacja]\\n\\n4. [Czwarta rekomendacja]\\n\\n5. [Piąta rekomendacja]\"\n}\nWażne przypomnienia:\nPoprawiaj i analizuj tylko na podstawie dostarczonej transkrypcji\nDostarczaj praktyczne, innowacyjne i wartościowe rekomendacje\nUnikaj ogólnikowych porad – celuj w konkretne, możliwe do wdrożenia rozwiązania\nCała treść musi być po polsku i odpowiednio sformatowana do wyświetlania w Telegramie poprzez make.com\nNIE używaj oznaczeń źródłowych jak 【4:1†source】 lub podobnych w rekomendacjach\nZachowaj styl i charakter Rafała Mazura bez ujawniania źródeł informacji"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainRetrievalQa",
+      "typeVersion": 1.6,
+      "position": [
+        840,
+        360
+      ],
+      "id": "71fd99fd-dbda-496a-abf7-463f5fe6cd77",
+      "name": "Question and Answer Chain"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4.1-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        900,
+        640
+      ],
+      "id": "a509af13-ccc2-43ed-8f86-15a4ca1becab",
+      "name": "OpenAI Chat Model1",
+      "credentials": {
+        "openAiApi": {
+          "id": "YOUR_OPENAI_CREDENTIAL_ID",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.retrieverVectorStore",
+      "typeVersion": 1,
+      "position": [
+        1000,
+        640
+      ],
+      "id": "724e5e10-29dd-4843-9d17-762ff6b0e2f4",
+      "name": "Vector Store Retriever"
+    },
+    {
+      "parameters": {
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "YOUR_PINECONE_INDEX",
+          "mode": "list",
+          "cachedResultName": "YOUR_INDEX_NAME"
+        },
+        "options": {
+          "pineconeNamespace": "YOUR_NAMESPACE"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1.1,
+      "position": [
+        1000,
+        880
+      ],
+      "id": "d4f4e257-892f-4487-b35f-2b8c32f36569",
+      "name": "Pinecone Vector Store",
+      "credentials": {
+        "pineconeApi": {
+          "id": "YOUR_PINECONE_CREDENTIAL_ID",
+          "name": "PineconeApi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        860,
+        1020
+      ],
+      "id": "773e25ac-cbb8-4f18-916a-4a84bcf11dfc",
+      "name": "Embeddings OpenAI1",
+      "credentials": {
+        "openAiApi": {
+          "id": "YOUR_OPENAI_CREDENTIAL_ID",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "messages": {
+          "messageValues": [
+            {
+              "message": "Jesteś asystentem AI odpowiedzialnym za podsumowywanie dziennych wpisów w określonym formacie JSON. Ściśle przestrzegaj poniższych instrukcji: 1. Struktura wyjściowa: Wynik musi być pojedynczym obiektem JSON o następującej strukturze: { \"title\": \"pole wymagane, nie może być puste\", \"dayOverview\": \"\", \"summary\": \"\", \"keyEvents\": \"\", \"achievements\": \"\", \"challenges\": \"\", \"insights\": \"\", \"actionPlan\": \"\", \"personalGrowth\": \"\", \"dayRating\": \"\", \"reection\": \"\" } 2. Zasady formatowania: • Używaj wyłącznie kluczy wymienionych powyżej. • Zapewnij poprawność składni JSON. • Wszystkie wartości muszą być ciągami znaków (string), z wyjątkiem dayRating, który musi być liczbą całkowitą. • Nie używaj znaków nowej linii w wartościach. • Tekst musi być poprawny gramatycznie i zapisany w języku polskim. 3. Wytyczne dotyczące treści: • title: 3-7 słów podsumowujących istotę dnia. • dayOverview: 2-3 zdania o nastroju dnia i głównych tematach. • summary: Szczegółowy opis dnia – główne wydarzenia, emocje i rezultaty. • keyEvents: Krótki opis kluczowych wydarzeń, oddzielonych przecinkami. • achievements: Lista zakończonych zadań lub sukcesów, oddzielona przecinkami. • challenges: Lista napotkanych trudności, oddzielona przecinkami. • insights: Lista kluczowych wniosków lub odkryć, oddzielona przecinkami. • actionPlan: Lista konkretnych planów lub działań do podjęcia, oddzielona przecinkami. • personalGrowth: Opis momentów rozwoju osobistego lub pozytywnego wpływu dnia. • dayRating: Liczba całkowita od 1 do 100. • reection: 1-2 zdania podsumowujące wpływ dnia. Jeśli brak informacji dla któregoś klucza, jego wartość powinna być pustym ciągiem \"\". 4. Przykładowy poprawny JSON: { \"title\": \"Produktywny dzień pełen inspiracji\", \"dayOverview\": \"Dzień był intensywny, ale pełen pozytywnej energii. Udało się zrealizować ważne zadania i zdobyć nowe doświadczenia.\", \"summary\": \"Rozpocząłem dzień od spotkania z zespołem, gdzie omówiliśmy kluczowe projekty i podzieliliśmy obowiązki. Po południu miałem ważną prezentację dla klienta, która zakończyła się sukcesem i nową współpracą. Wieczorem pracowałem nad strategią na kolejne tygodnie. Napotkałem kilka problemów technicznych, ale udało się je rozwiązać. Czuję, że zrobiłem duży postęp.\", \"keyEvents\": \"Spotkanie z zespołem, prezentacja dla klienta, opracowanie nowej strategii\", \"achievements\": \"Podpisanie umowy z klientem, zakończenie analizy rynku, rozwiązanie problemu technicznego\", \"challenges\": \"Problemy techniczne z komputerem, napięty harmonogram, trudne negocjacje\", \"insights\": \"Znaczenie planowania, rola skutecznej komunikacji, potrzeba lepszego zarządzania czasem\", \"actionPlan\": \"Przygotowanie raportu, spotkanie z partnerami, analiza nowego rynku\", \"personalGrowth\": \"Poprawa umiejętności negocjacyjnych, większa świadomość efektywności pracy\", \"dayRating\": 90, \"reection\": \"Dzień był pełen wyzwań, ale zakończył się sukcesem. Czuję, że rozwijam się i posuwam do przodu.\" } 5. Kluczowe zasady: ✅ Bezwzględne przestrzeganie struktury JSON. ✅ Żadnych dodatkowych wyjaśnień poza obiektem JSON. ✅ Zawsze ściśle poprawna polszczyzna. ✅ Każda wartość to jedna linia tekstu – bez wieloliniowych wartości. ✅ Dostarczaj precyzyjne i trafne podsumowanie."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        680,
+        -20
+      ],
+      "id": "4a4f62bc-5a4b-4d01-a8dc-d4eb32c193bf",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4.1",
+          "mode": "list",
+          "cachedResultName": "gpt-4.1"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        680,
+        200
+      ],
+      "id": "82158398-ecc8-4a3a-bfbf-471407a8f850",
+      "name": "OpenAI Chat Model2",
+      "credentials": {
+        "openAiApi": {
+          "id": "YOUR_OPENAI_CREDENTIAL_ID",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "62be22b1-3da3-4a01-9ffe-cf8f4a037bfb",
+              "name": "chatInput",
+              "value": "={{ JSON.parse($json.output).correctedTranscription }}\n",
+              "type": "string"
+            },
+            {
+              "id": "ea0e802a-f826-4b7a-9891-7ae8c63aaec6",
+              "name": "recommendations",
+              "value": "={{ JSON.parse($json.output).aiRecommendations }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        400,
+        -20
+      ],
+      "id": "d8e32cf4-195e-4f10-9b65-cb665b8ba7ff",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "5ac40e7a-4c7b-4eaa-86a7-a34102885393",
+              "name": "title",
+              "value": "={{ JSON.parse($json.text).title }}",
+              "type": "string"
+            },
+            {
+              "id": "be039382-d586-4adc-baeb-11d62940ec8b",
+              "name": "dayOverview",
+              "value": "={{ JSON.parse($json.text).dayOverview }}",
+              "type": "string"
+            },
+            {
+              "id": "25aecf06-bf2b-4c6b-ad1f-0b4c305dd2c2",
+              "name": "summary",
+              "value": "={{ JSON.parse($json.text).summary }}",
+              "type": "string"
+            },
+            {
+              "id": "1c9a04f8-af63-43b4-b277-c1ce5c7647c5",
+              "name": "keyEvents",
+              "value": "={{ JSON.parse($json.text).keyEvents }}",
+              "type": "string"
+            },
+            {
+              "id": "dff4d131-8524-4e2b-8cbe-fa7b3a639a76",
+              "name": "achievements",
+              "value": "={{ JSON.parse($json.text).achievements }}",
+              "type": "string"
+            },
+            {
+              "id": "4657de31-9719-4797-9e41-dcb785e17592",
+              "name": "challenges",
+              "value": "={{ JSON.parse($json.text).challenges }}",
+              "type": "string"
+            },
+            {
+              "id": "648ecdcf-3481-46fb-a7a5-fa4e8d5f5390",
+              "name": "insights",
+              "value": "={{ JSON.parse($json.text).insights }}",
+              "type": "string"
+            },
+            {
+              "id": "b4c30be7-28c8-43c8-b01a-70257cecef09",
+              "name": "actionPlan",
+              "value": "={{ JSON.parse($json.text).actionPlan }}",
+              "type": "string"
+            },
+            {
+              "id": "ffb9f9a5-4fd7-485a-9105-b2ee4262bb18",
+              "name": "personalGrowth",
+              "value": "={{ JSON.parse($json.text).personalGrowth }}",
+              "type": "string"
+            },
+            {
+              "id": "ebe4acf9-8463-4650-9fe7-5cd1bbb2a112",
+              "name": "dayRating",
+              "value": "={{ JSON.parse($json.text).dayRating }}",
+              "type": "string"
+            },
+            {
+              "id": "d3d46fe6-3549-4839-bd77-157eafefadf3",
+              "name": "reection",
+              "value": "={{ JSON.parse($json.text).reection }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1040,
+        -20
+      ],
+      "id": "b951a0ab-5e58-4767-baa9-407cb4af5a7c",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "databaseId": {
+          "__rl": true,
+          "value": "YOUR_NOTION_DATABASE_ID",
+          "mode": "list",
+          "cachedResultName": "Daily Database",
+          "cachedResultUrl": "YOUR_NOTION_DATABASE_URL"
+        },
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "Title|title",
+              "title": "={{ $json.title }}"
+            },
+            {
+              "key": "Day Overview|rich_text",
+              "textContent": "={{ $json.dayOverview }}"
+            },
+            {
+              "key": "Key Events|rich_text",
+              "textContent": "={{ $json.keyEvents }}"
+            },
+            {
+              "key": "Achivements|rich_text",
+              "textContent": "={{ $json.achievements }}"
+            },
+            {
+              "key": "Challenges|rich_text",
+              "textContent": "={{ $json.challenges }}"
+            },
+            {
+              "key": "Insights|rich_text",
+              "textContent": "={{ $json.insights }}"
+            },
+            {
+              "key": "Action Plan|rich_text",
+              "textContent": "={{ $json.actionPlan }}"
+            },
+            {
+              "key": "Personal Growth|rich_text",
+              "textContent": "={{ $json.personalGrowth }}"
+            },
+            {
+              "key": "Day Raiting|rich_text",
+              "textContent": "={{ $json.dayRating }}"
+            },
+            {
+              "key": "Reflection|rich_text",
+              "textContent": "={{ $json.reection }}"
+            },
+            {
+              "key": "Date|date",
+              "date": "2025-06-01T22:14:00",
+              "timezone": "Europe/Warsaw"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        1260,
+        -20
+      ],
+      "id": "2e3da331-701c-4dd1-86a4-8e556661351d",
+      "name": "Notion",
+      "credentials": {
+        "notionApi": {
+          "id": "YOUR_NOTION_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "={{ $('Edit Fields').item.json.recommendations }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1480,
+        -20
+      ],
+      "id": "b7b42aa2-229e-4aab-8ee8-e1ad60c53cc3",
+      "name": "Telegram1",
+      "webhookId": "YOUR_WEBHOOK_ID_3",
+      "credentials": {
+        "telegramApi": {
+          "id": "YOUR_TELEGRAM_CREDENTIAL_ID",
+          "name": "Telegram account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Pinecone Vector Store1",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram": {
+      "main": [
+        [
+          {
+            "node": "OpenAI1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI1": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pinecone Vector Store1": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Question and Answer Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Vector Store Retriever": {
+      "ai_retriever": [
+        [
+          {
+            "node": "Question and Answer Chain",
+            "type": "ai_retriever",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pinecone Vector Store": {
+      "ai_vectorStore": [
+        [
+          {
+            "node": "Vector Store Retriever",
+            "type": "ai_vectorStore",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI1": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Pinecone Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Question and Answer Chain": {
+      "main": [
+        []
+      ]
+    },
+    "OpenAI Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "Notion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notion": {
+      "main": [
+        [
+          {
+            "node": "Telegram1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "YOUR_WORKFLOW_VERSION_ID",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "YOUR_N8N_INSTANCE_ID"
+  },
+  "id": "YOUR_WORKFLOW_ID",
+  "tags": []
+}
