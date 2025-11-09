@@ -1,0 +1,235 @@
+{
+  "name": "Finance AI Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "daysInterval": 2,
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -880,
+        360
+      ],
+      "id": "ae939be6-63e0-4fd3-bd88-874ca615b864",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEETS_DOCUMENT_ID",
+          "mode": "list",
+          "cachedResultName": "Portfel_xtb",
+          "cachedResultUrl": ""
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Arkusz1",
+          "cachedResultUrl": ""
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -660,
+        360
+      ],
+      "id": "64d9a4d2-d607-4ab9-8bd7-25e07e3515ef",
+      "name": "Google Sheets",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YOUR_GOOGLE_SHEETS_CREDENTIAL_ID",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "Symbol"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        -440,
+        360
+      ],
+      "id": "55bccb8b-3f47-45a9-9a64-e4d287a4f61a",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.perplexity.ai/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer REDACTED_TOKEN"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"temperature\": 0.2,\n  \"top_p\": 0.9,\n  \"return_images\": false,\n  \"return_related_questions\": false,\n  \"top_k\": 0,\n  \"stream\": false,\n  \"presence_penalty\": 0,\n  \"frequency_penalty\": 1,\n  \"web_search_options\": {\n    \"search_context_size\": \"low\"\n  },\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"Jesteś specjalistycznym asystentem inwestycyjnym. Twoim zadaniem jest przeszukiwanie internetu w poszukiwaniu najnowszych i najważniejszych informacji dotyczących spółek i ETF-ów z portfela inwestycyjnego użytkownika. Odpowiedź przygotuj W JĘZYKU POLSKIM. Skup się wyłącznie na wiadomościach z ostatnich 24 godzin. Użytkownik przekazuje Ci listę symboli giełdowych, które posiada w swoim portfelu. ZADANIE: 1. Przeszukaj internet w poszukiwaniu najnowszych informacji (z ostatnich 24 godzin) dotyczących KAŻDEJ z wymienionych spółek/ETF-ów: - Ważne ogłoszenia firmowe (wyniki finansowe, fuzje, przejęcia) - Rekomendacje analityków i zmiany cen docelowych - Istotne zmiany w wolumenie obrotu - Informacje branżowe mogące wpłynąć na notowania - Dla ETF-ów: zmiany w składzie, przepływach kapitału, strukturze 2. Dla każdej znalezionej informacji podaj: - Symbol spółki/ETF-a - Krótkie, rzeczowe streszczenie informacji (1-2 zdania) - Potencjalny wpływ na wartość inwestycji (jeśli możliwy do określenia) - Źródło informacji (opcjonalnie) 3. Jeśli dla danej spółki/ETF-a nie znaleziono żadnych istotnych informacji z ostatnich 24 godzin, umieść ją w sekcji Spółki bez istotnych informacji. FORMAT WYJŚCIA: - Nagłówek z dzisiejszą datą - Sekcja NAJWAŻNIEJSZE WYDARZENIA z 3-5 najistotniejszymi informacjami z dnia - Informacje pogrupowane w 3 kategorie z odpowiednimi emoji: * 🔴 WYDARZENIA O NEGATYWNYM WPŁYWIE * 🟢 WYDARZENIA O POZYTYWNYM WPŁYWIE * 🟡 WYDARZENIA O NEUTRALNYM/MIESZANYM WPŁYWIE * ⚪ SPÓŁKI BEZ ISTOTNYCH INFORMACJI Z OSTATNICH 24H (lista spółek) - Sekcja REKOMENDOWANE OBSERWACJE z listą 2-3 spółek lub sektorów wartych szczególnej uwagi - Krótkie podsumowanie ogólnej sytuacji rynkowej na podstawie znalezionych informacji\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"{{ $json.Symbol }}\"\n    }\n  ],\n  \"model\": \"sonar-deep-research\\t\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -240,
+        360
+      ],
+      "id": "aa30815a-26ca-4528-9551-52c1e6580042",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=Przekształć poniższy tekst raportowy na format HTML dla Telegram Bot API:\n\n1. Sformatuj jako czytelny raport z właściwą hierarchią (zamień ## na <b> dla nagłówków sekcji)\n2. Zamień ### na <b> dla nazw spółek\n3. Pogrubij wszystkie występujące **fragmenty** używając <b>\n4. Usuń tabelę z sekcji \"Spółki Bez Istotnych Informacji\" i zastąp ją prostą listą z pogrubionymi symbolami\n5. Dodaj emoji do nagłówków sekcji (🔴 dla Negatywnego, 🟢 dla Pozytywnego, 🟡 dla Neutralnego, ⚪ dla Bez Informacji)\n6. Usuń stopkę \"*This message was sent automatically with *n8n19:27\"\n7. Usuń znaczniki &nbsp;\n8. Zachowaj strukturę z pustymi liniami między sekcjami dla czytelności\n9. Używaj tylko tagów HTML obsługiwanych przez Telegram (<b>, <i>, <u>, <s>, <code>, <pre>, <a>)\n10. Usuń odniesienia do źródeł w nawiasach kwadratowych [8][11][15][16][17][19][20]\n11. Usuń hiperłącza a href\n12. Nie tworz ul ani li usuń dodatkowo wszytskie te ~ znaczniki\n\n\nZwróć kompletny kod HTML gotowy do użycia w Telegram Bot API.\n{{ $json.choices[0].message.content }}"
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        -40,
+        360
+      ],
+      "id": "586a4bd9-68b1-42a4-bbd8-afe75ed4da0c",
+      "name": "OpenAI1",
+      "credentials": {
+        "openAiApi": {
+          "id": "YOUR_OPENAI_CREDENTIAL_ID",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "YOUR_TELEGRAM_CHAT_ID",
+        "text": "={{ $json.message.content.html || $json.message.content.text }}",
+        "additionalFields": {
+          "parse_mode": "HTML"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        320,
+        360
+      ],
+      "id": "b18c634b-b651-47d1-9146-ea36da4674e1",
+      "name": "Telegram",
+      "webhookId": "YOUR_WEBHOOK_ID",
+      "alwaysOutputData": false,
+      "executeOnce": false,
+      "retryOnFail": false,
+      "notesInFlow": false,
+      "credentials": {
+        "telegramApi": {
+          "id": "YOUR_TELEGRAM_CREDENTIAL_ID",
+          "name": "Finance telegram bot"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "OpenAI1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI1": {
+      "main": [
+        [
+          {
+            "node": "Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "WORKFLOW_VERSION_ID",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "YOUR_N8N_INSTANCE_ID"
+  },
+  "id": "YOUR_WORKFLOW_ID",
+  "tags": []
+}

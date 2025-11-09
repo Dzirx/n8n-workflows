@@ -1,0 +1,2453 @@
+{
+  "name": "GLPI - Raport rozliczanie kosztów",
+  "nodes": [
+    {
+      "parameters": {
+        "url": "https://glpi.pl/apirest.php/initSession",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "user_token "
+            },
+            {
+              "name": "App-Token",
+              "value": ""
+            }
+          ]
+        },
+        "options": {
+          "allowUnauthorizedCerts": true
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        64,
+        -32
+      ],
+      "id": "27fd6c7d-17b9-49fa-a078-3a78295361eb",
+      "name": "Pobranie session_token"
+    },
+    {
+      "parameters": {
+        "url": "=https://glpi.pl/apirest.php/search/User?criteria[0][field]=9&criteria[0][searchtype]=equals&criteria[0][value]={{ $('Podaj imię i nazwisko').item.json['Imię'] }}&criteria[1][field]=34&criteria[1][searchtype]=equals&criteria[1][value]={{ $('Podaj imię i nazwisko').item.json.Nazwisko }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Session-Token",
+              "value": "={{ $('Pobranie session_token').item.json.session_token }}"
+            },
+            {
+              "name": "App-Token",
+              "value": ""
+            }
+          ]
+        },
+        "options": {
+          "allowUnauthorizedCerts": true
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        288,
+        -32
+      ],
+      "id": "e90d79a5-4e69-4248-96d4-7046c9f30370",
+      "name": "Wyszukanie usera w bazie GLPI"
+    },
+    {
+      "parameters": {
+        "url": "=https://glpi.pl/apirest.php/search/User?forcedisplay[0]=2&forcedisplay[1]=5&criteria[1][field]=1&criteria[1][searchtype]=contains&criteria[1][value]={{ $json.data[0]['1'] }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Session-Token",
+              "value": "={{ $('Pobranie session_token').item.json.session_token }}"
+            },
+            {
+              "name": "App-Token",
+              "value": ""
+            }
+          ]
+        },
+        "options": {
+          "allowUnauthorizedCerts": true
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        480,
+        -32
+      ],
+      "id": "82cf8153-9f8b-44f8-91dc-43391713287d",
+      "name": "Wydobycie id usera"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "data[0]['2']",
+        "options": {
+          "destinationFieldName": "Id usera w GLPI"
+        }
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        656,
+        -32
+      ],
+      "id": "51bffb07-8172-4cdc-a027-ebf0771c9a8a",
+      "name": "Wydzielenie ID usera"
+    },
+    {
+      "parameters": {
+        "url": "=https://glpi.pl/apirest.php/search/Computer?range=0-3000&criteria[0][field]=24&criteria[0][searchtype]=equals&criteria[0][value]={{ $json['Id usera w GLPI'] }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Session-Token",
+              "value": "={{ $('Pobranie session_token').item.json.session_token }}"
+            },
+            {
+              "name": "App-Token",
+              "value": ""
+            }
+          ]
+        },
+        "options": {
+          "allowUnauthorizedCerts": true
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        864,
+        -32
+      ],
+      "id": "9f8d51da-dc6f-4511-8cbf-43719dadec27",
+      "name": "Komputery przypisane do usera"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "data",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        1088,
+        -32
+      ],
+      "id": "097ae46b-d9c0-441a-b6d0-2c229be2726d",
+      "name": "Wydzielenie osobnych pozycji"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "debbab71-4907-435d-a34a-4dd8b890ca94",
+              "name": "Nazwa",
+              "value": "={{ $json['1'] }}",
+              "type": "string"
+            },
+            {
+              "id": "9e7729d2-cc7c-4547-a011-303e43cd0030",
+              "name": "Produkt",
+              "value": "={{ $json['76679'] }}",
+              "type": "string"
+            },
+            {
+              "id": "10f54536-104b-4581-bf8f-9f4dd587ecb1",
+              "name": "Typ",
+              "value": "={{ $json['4'] }}",
+              "type": "string"
+            },
+            {
+              "id": "12bbae98-23f7-4f08-82cb-349790665059",
+              "name": "Status",
+              "value": "={{ $json['31'] }}",
+              "type": "string"
+            },
+            {
+              "id": "ad59fde2-ac41-4002-a539-0645fc3c21d7",
+              "name": "cappo881",
+              "value": "={{ $json['76694'] }}",
+              "type": "string"
+            },
+            {
+              "id": "c5ce419c-487a-4c7a-b423-72e8ae869c52",
+              "name": "cappo881w",
+              "value": "={{ $json['76718'] }}",
+              "type": "string"
+            },
+            {
+              "id": "9e112d97-5a8c-4ccf-beba-7430f7ebca29",
+              "name": "cappoVM",
+              "value": "={{ $json['76767'] }}",
+              "type": "string"
+            },
+            {
+              "id": "2f9e1db3-7ddc-4afc-8960-fdaa57059587",
+              "name": "Osoba odpowiedzialna",
+              "value": "={{ $json['24'] }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1280,
+        -32
+      ],
+      "id": "50ddba44-890d-469a-b0f3-015feace6216",
+      "name": "Wskazanie kolumn do raportu"
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  // Pobierz wartości i zamień na liczby, traktując null jako 0\n  const cappo881 = parseFloat(item.json.cappo881) || 0;\n  const cappo881w = parseFloat(item.json.cappo881w) || 0;\n  const cappoVM = parseFloat(item.json.cappoVM) || 0;\n\n  // Oblicz sumę\n  const cappoSUM = cappo881 + cappo881w + cappoVM;\n\n  // Zmień format liczbowy: zamień \".\" na \",\"\n  const format = (val) => val.toString().replace(\".\", \",\");\n\n  return {\n    json: {\n      ...item.json,\n      cappo881: format(cappo881),\n      cappo881w: format(cappo881w),\n      cappoVM: format(cappoVM),\n      cappoSUM: format(cappoSUM)\n    }\n  };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1488,
+        -32
+      ],
+      "id": "7431b018-25af-4fab-bf4e-d4c21e2a9524",
+      "name": "Sumowanie backupów cappo"
+    },
+    {
+      "parameters": {
+        "operation": "xlsx",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        1680,
+        -32
+      ],
+      "id": "6952d82a-4f1c-4a52-b8a5-2daa21a67a58",
+      "name": "Konwersja do XLSX"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "data",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        544,
+        272
+      ],
+      "id": "224b9bb1-2bb1-41ec-8bbb-552832116fba",
+      "name": "Wydzielenie osobnych pozycji1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "debbab71-4907-435d-a34a-4dd8b890ca94",
+              "name": "Nazwa",
+              "value": "={{ $json['1'] }}",
+              "type": "string"
+            },
+            {
+              "id": "9e7729d2-cc7c-4547-a011-303e43cd0030",
+              "name": "Produkt",
+              "value": "={{ $json['76679'] }}",
+              "type": "string"
+            },
+            {
+              "id": "10f54536-104b-4581-bf8f-9f4dd587ecb1",
+              "name": "Typ",
+              "value": "={{ $json['4'] }}",
+              "type": "string"
+            },
+            {
+              "id": "12bbae98-23f7-4f08-82cb-349790665059",
+              "name": "Status",
+              "value": "={{ $json['31'] }}",
+              "type": "string"
+            },
+            {
+              "id": "ad59fde2-ac41-4002-a539-0645fc3c21d7",
+              "name": "cappo881",
+              "value": "={{ $json['76694'] }}",
+              "type": "string"
+            },
+            {
+              "id": "c5ce419c-487a-4c7a-b423-72e8ae869c52",
+              "name": "cappo881w",
+              "value": "={{ $json['76718'] }}",
+              "type": "string"
+            },
+            {
+              "id": "9e112d97-5a8c-4ccf-beba-7430f7ebca29",
+              "name": "cappoVM",
+              "value": "={{ $json['76767'] }}",
+              "type": "string"
+            },
+            {
+              "id": "2f9e1db3-7ddc-4afc-8960-fdaa57059587",
+              "name": "Osoba odpowiedzialna",
+              "value": "={{ $json['24'] }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        768,
+        272
+      ],
+      "id": "b837c077-c0cc-44ea-bce3-460fa4fb46fc",
+      "name": "Wskazanie kolumn do raportu1"
+    },
+    {
+      "parameters": {
+        "operation": "xlsx",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        1248,
+        272
+      ],
+      "id": "5b7db097-c3e0-4341-976e-a1d33b956348",
+      "name": "Konwersja do XLSX1"
+    },
+    {
+      "parameters": {
+        "formTitle": "GLPI - Raport dla usera",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Produkt",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "IT"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [
+        -144,
+        272
+      ],
+      "id": "59551e06-f51f-400c-8fb6-997866bbe264",
+      "name": "Podaj Produkt",
+      "webhookId": "REDACTED_WEBHOOK_ID"
+    },
+    {
+      "parameters": {
+        "formTitle": "GLPI - Raport dla usera",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Imię"
+            },
+            {
+              "fieldLabel": "Nazwisko"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [
+        -144,
+        -32
+      ],
+      "id": "2dffc12e-edcc-42db-8613-1bf757c84325",
+      "name": "Podaj imię i nazwisko",
+      "webhookId": "REDACTED_WEBHOOK_ID"
+    },
+    {
+      "parameters": {
+        "url": "https://glpi.pl/apirest.php/initSession",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "user_token "
+            },
+            {
+              "name": "App-Token",
+              "value": ""
+            }
+          ]
+        },
+        "options": {
+          "allowUnauthorizedCerts": true
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        64,
+        272
+      ],
+      "id": "5136165d-62c6-4d1f-98aa-0a3556ec76bf",
+      "name": "Pobranie session_token1"
+    },
+    {
+      "parameters": {
+        "url": "=https://glpi.pl/apirest.php/search/Computer?range=0-3000&criteria[0][field]=76679&criteria[0][searchtype]=contains&criteria[0][value]={{ $('Podaj Produkt').item.json.Produkt }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Session-Token",
+              "value": "={{ $json.session_token }}"
+            },
+            {
+              "name": "App-Token",
+              "value": ""
+            }
+          ]
+        },
+        "options": {
+          "allowUnauthorizedCerts": true
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        304,
+        272
+      ],
+      "id": "e83b1071-b02d-4c9d-9c6e-852fa34b09ec",
+      "name": "Lista komputerów po wybranym produkcie"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -112,
+        1376
+      ],
+      "id": "92aff2bf-e11f-4dd6-b783-c732be757b3b",
+      "name": "When clicking ‘Test workflow’"
+    },
+    {
+      "parameters": {
+        "url": "https://glpi.pl/apirest.php/initSession",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "user_token "
+            },
+            {
+              "name": "App-Token",
+              "value": ""
+            }
+          ]
+        },
+        "options": {
+          "allowUnauthorizedCerts": true
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        80,
+        560
+      ],
+      "id": "3ffdcd40-95b5-40dd-8c8a-0f839a004ddd",
+      "name": "Pobranie session_token2"
+    },
+    {
+      "parameters": {
+        "url": "=https://glpi.pl/apirest.php/killSession",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Session-Token",
+              "value": "={{ $('Pobranie session_token').item.json.session_token }}"
+            },
+            {
+              "name": "App-Token",
+              "value": ""
+            }
+          ]
+        },
+        "options": {
+          "allowUnauthorizedCerts": true
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1888,
+        -32
+      ],
+      "id": "7e46fbc4-cec6-45bc-9b97-b45fcaef1a9c",
+      "name": "GLPI - Kill sesion"
+    },
+    {
+      "parameters": {
+        "url": "=https://glpi.pl/apirest.php/killSession",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Session-Token",
+              "value": "={{ $('Pobranie session_token1').item.json.session_token }}"
+            },
+            {
+              "name": "App-Token",
+              "value": ""
+            }
+          ]
+        },
+        "options": {
+          "allowUnauthorizedCerts": true
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1456,
+        272
+      ],
+      "id": "9d97c17d-aee2-48cd-b9e4-3fbeee1fbd2e",
+      "name": "GLPI - Kill sesion1"
+    },
+    {
+      "parameters": {
+        "url": "=https://glpi.pl/apirest.php/search/Computer?range=0-3000",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Session-Token",
+              "value": "={{ $json.session_token }}"
+            },
+            {
+              "name": "App-Token",
+              "value": ""
+            }
+          ]
+        },
+        "options": {
+          "allowUnauthorizedCerts": true
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        304,
+        560
+      ],
+      "id": "35cbf4c1-8cf9-4c89-8a53-570ac38d35e0",
+      "name": "Pobranie listy wszystkich hostów"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "data",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        528,
+        560
+      ],
+      "id": "6dc15066-36b0-4be7-9bd0-75a646729f09",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "operation": "xlsx",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        1184,
+        560
+      ],
+      "id": "260cd67b-ca82-4980-83c1-5057be076320",
+      "name": "Convert to File"
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  // Pobierz wartości i zamień na liczby, traktując null jako 0\n  const cappo881 = parseFloat(item.json.cappo881) || 0;\n  const cappo881w = parseFloat(item.json.cappo881w) || 0;\n  const cappoVM = parseFloat(item.json.cappoVM) || 0;\n\n  // Oblicz sumę\n  const cappoSUM = cappo881 + cappo881w + cappoVM;\n\n  // Zmień format liczbowy: zamień \".\" na \",\"\n  const format = (val) => val.toString().replace(\".\", \",\");\n\n  return {\n    json: {\n      ...item.json,\n      cappo881: format(cappo881),\n      cappo881w: format(cappo881w),\n      cappoVM: format(cappoVM),\n      cappoSUM: format(cappoSUM)\n    }\n  };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1008,
+        272
+      ],
+      "id": "3d08dedd-0fe8-446d-86da-30e4b6fb6e60",
+      "name": "Sumowanie backupów"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. Przekształć dane i oblicz cappoSUM\nconst transformedItems = items.map(item => {\n  const cappo881 = parseFloat(item.json.cappo881) || 0;\n  const cappo881w = parseFloat(item.json.cappo881w) || 0;\n  const cappoVM = parseFloat(item.json.cappoVM) || 0;\n  const cappoSUM = cappo881 + cappo881w + cappoVM;\n\n  const format = (val) => val.toString().replace(\".\", \",\");\n\n  return {\n    ...item.json,\n    cappo881: format(cappo881),\n    cappo881w: format(cappo881w),\n    cappoVM: format(cappoVM),\n    cappoSUM: cappoSUM, // liczba do obliczeń\n  };\n});\n\n// 2. Agregacja cappoSUM per Produkt\nconst sumaPerProdukt = {};\ntransformedItems.forEach(item => {\n  let produkt = item[\"Produkt\"];\n  if (!produkt || produkt.trim() === \"\") {\n    produkt = \"Brak produktu\";\n  }\n  if (!sumaPerProdukt[produkt]) {\n    sumaPerProdukt[produkt] = 0;\n  }\n  sumaPerProdukt[produkt] += item.cappoSUM;\n});\n\n// 3. Oblicz sumaryczny cappoSUM\nconst totalSUM = Object.values(sumaPerProdukt).reduce((a, b) => a + b, 0);\n\n// 4. Przygotuj raport z udziałem procentowym\nconst raport = Object.entries(sumaPerProdukt)\n  .map(([produkt, suma]) => {\n    const procent = (suma / totalSUM) * 100;\n    return {\n      Produkt: produkt,\n      cappoSUM: suma.toFixed(2).replace(\".\", \",\"),\n      \"Udział %\": procent.toFixed(2).replace(\".\", \",\") + \"%\"\n    };\n  })\n  .sort((a, b) => parseFloat(b[\"Udział %\"].replace(\",\", \".\")) - parseFloat(a[\"Udział %\"].replace(\",\", \".\")));\n\n// 5. Dodaj dwa puste wiersze odstępu\nconst emptyRow = { json: { Produkt: \"\", cappoSUM: \"\", \"Udział %\": \"\" } };\nconst spacer = [emptyRow, emptyRow];\n\n// 6. Zwróć dane + raport\nreturn [\n  ...transformedItems.map(row => ({ json: row })), // dane źródłowe\n  ...spacer,\n  ...raport.map(row => ({ json: row })) // raport końcowy\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        960,
+        560
+      ],
+      "id": "2767da99-5aef-4bae-bd81-d438125b26d9",
+      "name": "Sum backup"
+    },
+    {
+      "parameters": {
+        "url": "=https://glpi.pl/apirest.php/killSession",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Session-Token",
+              "value": "={{ $('Pobranie session_token2').item.json.session_token }}"
+            },
+            {
+              "name": "App-Token",
+              "value": ""
+            }
+          ]
+        },
+        "options": {
+          "allowUnauthorizedCerts": true
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        528,
+        752
+      ],
+      "id": "2b2ad735-6c8c-476e-8b0f-2a3ddf69042d",
+      "name": "GLPI - ubicie sesji"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "078be3bf-7d06-4eb7-a2b2-e657e9958605",
+              "name": "Nazwa hosta",
+              "value": "={{ $json['1'] }}",
+              "type": "string"
+            },
+            {
+              "id": "1c6a9552-7e51-491a-a5df-2ffa8386a8aa",
+              "name": "Osoba odpowiedzialna",
+              "value": "={{ $json['24'] }}",
+              "type": "string"
+            },
+            {
+              "id": "53d4909d-c556-48a1-9798-6bf681fe5523",
+              "name": "Produkt",
+              "value": "={{ $json['76679'] }}",
+              "type": "string"
+            },
+            {
+              "id": "7d5ff731-e545-4cd0-9fc0-ae9dbbc77f64",
+              "name": "Typ",
+              "value": "={{ $json['4'] }}",
+              "type": "string"
+            },
+            {
+              "id": "4c51696f-225d-4984-a26f-db221a1132d2",
+              "name": "Status",
+              "value": "={{ $json['31'] }}",
+              "type": "string"
+            },
+            {
+              "id": "89fb19e2-477d-4f3c-b9ca-1ae4816d9b48",
+              "name": "cappo881",
+              "value": "={{ $json['76694'] }}",
+              "type": "string"
+            },
+            {
+              "id": "6d866325-426a-49b5-859f-b79bca70e5d6",
+              "name": "cappo881w",
+              "value": "={{ $json['76718'] }}",
+              "type": "string"
+            },
+            {
+              "id": "a68a5b2e-6ebd-4d4d-8fef-f6855b276458",
+              "name": "cappoVM",
+              "value": "={{ $json['76767'] }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        736,
+        560
+      ],
+      "id": "9dd85158-941e-4253-9a0a-7fc979668cea",
+      "name": "Raport - Wskazanie kolumn"
+    },
+    {
+      "parameters": {
+        "numberInputs": 3
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.1,
+      "position": [
+        1088,
+        1376
+      ],
+      "id": "64d53d8c-2c0a-4d38-93f6-a2ac2a4cc614",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "operation": "xlsx",
+        "binaryPropertyName": "rozliczanie_kosztow.xlsx",
+        "options": {
+          "fileName": "Raport_K8S_rozliczanie_kosztow.xlsx",
+          "sheetName": "rozliczanie_kosztow"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        1776,
+        1600
+      ],
+      "id": "8c593bd5-a58b-4511-b651-91cd8a7326cb",
+      "name": "Zapis do XLSX"
+    },
+    {
+      "parameters": {
+        "content": "## Raport K8S - rozliczanie kosztów\n**Raport z wyliczaniem kosztów dla k8s",
+        "height": 140,
+        "width": 400,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -240,
+        1072
+      ],
+      "id": "6366076f-c933-4eae-b446-05124a204d79",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "",
+        "height": 1200,
+        "width": 2452
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -240,
+        1072
+      ],
+      "id": "33ea828d-22b6-403e-b357-01d613068b2b",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "data",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        800,
+        1136
+      ],
+      "id": "eab0d15d-efed-4c09-92b6-a7a4a076e25e",
+      "name": "Split Out data proxkub"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "data",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        800,
+        1376
+      ],
+      "id": "8b454b1d-4135-4ed9-9dd7-603f9acb9559",
+      "name": "Split Out data gpu"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "data",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        800,
+        1600
+      ],
+      "id": "0030964c-0852-4168-b9dc-be5a871b473a",
+      "name": "Split Out data all hosts"
+    },
+    {
+      "parameters": {
+        "url": "https://glpi.pl/apirest.php/initSession",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "user_token "
+            },
+            {
+              "name": "App-Token",
+              "value": ""
+            }
+          ]
+        },
+        "options": {
+          "allowUnauthorizedCerts": true
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        128,
+        1376
+      ],
+      "id": "0943547f-952a-4fd3-97f2-22baf521d45c",
+      "name": "GLPI - Pobranie session_token"
+    },
+    {
+      "parameters": {
+        "url": "=https://glpi.pl/apirest.php/search/Computer?range=0-3000&forcedisplay[0]=1&forcedisplay[1]=111&forcedisplay[2]=34&forcedisplay[3]=76679&forcedisplay[4]=160&forcedisplay[5]=164&forcedisplay[6]=165&forcedisplay[7]=5160&forcedisplay[8]=18&criteria[0][field]=1&criteria[0][searchtype]=begin_with&criteria[0][value]=proxkub",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Session-Token",
+              "value": "={{ $json.session_token }}"
+            },
+            {
+              "name": "App-Token",
+              "value": ""
+            }
+          ]
+        },
+        "options": {
+          "allowUnauthorizedCerts": true
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        480,
+        1136
+      ],
+      "id": "3f0c532a-82cc-4c41-9c2c-32033f0df9ae",
+      "name": "GLPI - Pobranie listy proxkub"
+    },
+    {
+      "parameters": {
+        "url": "=https://glpi.pl/apirest.php/search/Computer?range=0-3000&forcedisplay[0]=1&forcedisplay[1]=111&forcedisplay[2]=34&forcedisplay[3]=76679&forcedisplay[4]=160&forcedisplay[5]=164&forcedisplay[6]=165&forcedisplay[7]=5160&forcedisplay[8]=18&criteria[0][field]=1&criteria[0][searchtype]=begin_with&criteria[0][value]=^gpu",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Session-Token",
+              "value": "={{ $json.session_token }}"
+            },
+            {
+              "name": "App-Token",
+              "value": ""
+            }
+          ]
+        },
+        "options": {
+          "allowUnauthorizedCerts": true
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        480,
+        1376
+      ],
+      "id": "9a49d574-899a-4359-a5a9-41e559ce713e",
+      "name": "GLPI - Pobranie listy gpu"
+    },
+    {
+      "parameters": {
+        "url": "=https://glpi.pl/apirest.php/search/Computer?range=0-3000&forcedisplay[0]=1&forcedisplay[1]=111&forcedisplay[2]=34&forcedisplay[3]=76679",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Session-Token",
+              "value": "={{ $json.session_token }}"
+            },
+            {
+              "name": "App-Token",
+              "value": ""
+            }
+          ]
+        },
+        "options": {
+          "allowUnauthorizedCerts": true
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        480,
+        1600
+      ],
+      "id": "00ee39c5-cfdb-4d1b-b57c-e7fbfe8f5b03",
+      "name": "GLPI - Pobranie wszystkich hostów"
+    },
+    {
+      "parameters": {
+        "url": "=https://glpi.pl/apirest.php/killSession",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Session-Token",
+              "value": "={{ $('GLPI - Pobranie session_token').item.json.session_token }}"
+            },
+            {
+              "name": "App-Token",
+              "value": ""
+            }
+          ]
+        },
+        "options": {
+          "allowUnauthorizedCerts": true
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        480,
+        2048
+      ],
+      "id": "5ed86e54-d5be-4b9b-a453-4e64f02352f8",
+      "name": "GLPI - ubicie sesji "
+    },
+    {
+      "parameters": {
+        "url": "=https://glpi.pl/apirest.php/search/Computer?range=0-3000&forcedisplay[0]=1&forcedisplay[1]=111&forcedisplay[2]=34&forcedisplay[3]=76679&forcedisplay[4]=160&forcedisplay[5]=164&forcedisplay[6]=165&forcedisplay[7]=5160&forcedisplay[8]=18&criteria[0][field]=1&criteria[0][searchtype]=begin_with&criteria[0][value]=^kub",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Session-Token",
+              "value": "={{ $json.session_token }}"
+            },
+            {
+              "name": "App-Token",
+              "value": ""
+            }
+          ]
+        },
+        "options": {
+          "allowUnauthorizedCerts": true
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        480,
+        1808
+      ],
+      "id": "d81e94ff-43c3-405f-b98e-1e5f16dca5f4",
+      "name": "GLPI - Pobranie listy kub"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "data",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        800,
+        1808
+      ],
+      "id": "3ee0132c-a848-4937-a7b0-c437fd0d1d23",
+      "name": "Split Out data kub"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.1,
+      "position": [
+        1568,
+        1600
+      ],
+      "id": "b62ac93b-1636-4ae0-926d-6d14cdb4b12a",
+      "name": "Merge again"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7363a7a8-f1b9-437a-9cc1-009463633f73",
+              "name": "HV",
+              "value": "={{ $json['1'] }}",
+              "type": "string"
+            },
+            {
+              "id": "c102e38a-346f-4bf9-b5b0-75c90a08814f",
+              "name": "HV - Liczba wątków",
+              "value": "={{ $json['34'] }}",
+              "type": "number"
+            },
+            {
+              "id": "583e20c7-848f-46a9-a373-b2d4bd900f40",
+              "name": "HV - RAM (MB)",
+              "value": "={{ $json['111'] }}",
+              "type": "number"
+            },
+            {
+              "id": "0fa081ea-8d31-4813-8e96-e23fe61d8a0a",
+              "name": "HV - Produkt",
+              "value": "={{ $json['76679'] }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1328,
+        1808
+      ],
+      "id": "361a8b9c-9ccf-462d-a2f3-fd27c8c681d7",
+      "name": "Wydzielenie pól do raportu"
+    },
+    {
+      "parameters": {
+        "jsCode": "const keysToKeep = [\"1\", \"34\", \"111\", \"76679\"];\n\n// 🔧 Prosty i spójny przelicznik dla GLPI-Agent\nfunction computeTotalThreads(agentStr, coresRaw, threadsRaw) {\n  const isGlpi = (agentStr || \"\").includes(\"GLPI-Agent\");\n  const cores = parseFloat(coresRaw) || 0;\n  const t = parseFloat(threadsRaw) || 0;\n\n  if (!isGlpi) return Number(t); // FusionInventory zwraca total\n  if (cores === 0 || t === 0) return 0;\n\n  // Reguła: 18 × (34 / 2)\n  return Number((cores * (t / 2)).toFixed(4));\n}\n\nreturn items\n  .filter(item => {\n    const nodeName = item.json[\"1\"];\n    return /^kub\\d+n\\d+$/.test(nodeName);\n  })\n  .map(item => {\n    const output = {};\n    const agent = item.json[\"5160\"] || \"\";\n    const cores = item.json[\"18\"];\n    let threads = item.json[\"34\"];\n\n    // przelicz poprawnie dla GLPI-Agent\n    threads = computeTotalThreads(agent, cores, threads);\n\n    for (const key of keysToKeep) {\n      if (item.json.hasOwnProperty(key)) {\n        let value = item.json[key];\n        if (!isNaN(value)) {\n          const num = parseFloat(value);\n          output[key] = Number.isNaN(num) ? value : Number(num.toFixed(4));\n        } else {\n          output[key] = value;\n        }\n      }\n    }\n\n    output[\"34\"] = Number(threads); // wymuszenie typu liczbowego\n    return { json: output };\n  });\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1088,
+        1808
+      ],
+      "id": "54b84a09-c665-4f5f-b56d-cd803bb3c947",
+      "name": "Wydzielenie kub(cyfry)n(cyfry)"
+    },
+    {
+      "parameters": {
+        "jsCode": "const staryRaport = [];\nconst nowyRaport = [];\n\nfor (const item of items) {\n  if (item.json.Produkt) {\n    staryRaport.push(item.json);\n  } else {\n    nowyRaport.push(item.json);\n  }\n}\n\nconst wynik = nowyRaport.map(nowy => {\n  const dopasowanyStary = staryRaport.find(\n    stary => stary.Cluster === nowy.Cluster && stary.Namespace === nowy.Namespace\n  );\n\n  let produkt = '';\n  let oldProdukt = '';\n\n  if (dopasowanyStary) {\n    if (dopasowanyStary.Annotation === nowy.Annotation) {\n      produkt = dopasowanyStary.Produkt;\n    } else {\n      oldProdukt = dopasowanyStary.Produkt;\n    }\n  }\n\n  // Nowa kolumna: Produkt k8s\n  const produktK8s = produkt || oldProdukt || nowy.Annotation;\n\n  return {\n    Cluster: nowy.Cluster,\n    Namespace: nowy.Namespace,\n    Annotation: nowy.Annotation,\n    \"Effective Usage\": nowy[\"Effective Usage\"],\n    Produkt: produkt,\n    \"Old Produkt\": oldProdukt,\n    \"Produkt k8s\": produktK8s\n  };\n});\n\nreturn wynik.map(w => ({ json: w }));\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1408,
+        2848
+      ],
+      "id": "9569465b-314e-468d-a091-8a034292ce6a",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "stary",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        688,
+        2864
+      ],
+      "id": "a0933b59-7941-4425-9e41-e5ae61c298ca",
+      "name": "Webhook",
+      "webhookId": "REDACTED_WEBHOOK_ID"
+    },
+    {
+      "parameters": {
+        "operation": "xlsx",
+        "binaryPropertyName": "stary_raport",
+        "options": {
+          "headerRow": true
+        }
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        944,
+        2768
+      ],
+      "id": "72edaf43-d7b3-4f2b-8638-d535c1c5b2ea",
+      "name": "stary_raport"
+    },
+    {
+      "parameters": {
+        "operation": "xlsx",
+        "binaryPropertyName": "nowy_raport",
+        "options": {
+          "headerRow": true
+        }
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        944,
+        2992
+      ],
+      "id": "77f24c7b-6573-4678-aed2-b5a29b0455e8",
+      "name": "nowy_raport"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1184,
+        2848
+      ],
+      "id": "8af3641a-9681-4026-adc7-66a590321b8a",
+      "name": "Merge1"
+    },
+    {
+      "parameters": {
+        "fromEmail": "",
+        "toEmail": "",
+        "subject": "Raport k8s_multitenant",
+        "html": "W załączeniu raport k8s_multitenant.",
+        "options": {
+          "appendAttribution": false,
+          "attachments": "k8s_multitenant.xlsx"
+        }
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        1824,
+        2848
+      ],
+      "id": "80bf203d-4fc2-4e11-a702-bb2b5c0b39d5",
+      "name": "Send email",
+      "webhookId": "REDACTED_WEBHOOK_ID",
+      "credentials": {
+        "smtp": {
+          "id": "REDACTED_CREDENTIAL_ID",
+          "name": ""
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "# 📊 Workflow: Raport Kubernetes – dopasowanie produktów\n\nWorkflow automatyzuje porównanie namespace’ów z dwóch raportów (`stary` i `nowy`) oraz generuje końcowy raport z przypisanym produktem, który następnie wysyłany jest e-mailem jako załącznik `.xlsx`.\n\n---\n\n## 🔁 Kroki workflow\n\n1. **📥 Extract from File – `stary_raport`**\n   - Wczytuje dane historyczne z namespace’ami i przypisanym `Produktem`.\n\n2. **📥 Extract from File – `nowy_raport`**\n   - Wczytuje bieżące namespace’y z adnotacjami (`Annotation`, `Effective Usage`).\n\n3. **🔗 Merge**\n   - Łączy oba raporty w jedną listę do dalszego przetwarzania.\n\n4. **🧠 Function**\n   - Dla każdego namespace:\n     - Jeśli `Cluster` + `Namespace` istnieje w `stary_raport` i `Annotation` jest taki sam → ustawia `Produkt`\n     - Jeśli `Cluster` + `Namespace` istnieje, ale `Annotation` jest inny → ustawia `Old Produkt`\n     - Dodaje kolumnę `Produkt k8s`:\n       - Jeśli jest `Produkt` lub `Old Produkt` → używa go\n       - Jeśli nie → używa `Annotation`\n\n5. **📊 Convert to File**\n   - Konwertuje dane wynikowe do pliku `.xlsx` (z odpowiednią nazwą arkusza i pliku).\n\n6. **✉️ Send Email**\n   - Wysyła plik `.xlsx` na podany adres e-mail z gotowym raportem.\n\n---\n\n## 📁 Struktura raportu\n\n| Cluster | Namespace | Annotation | Effective Usage | Produkt | Old Produkt | Produkt k8s |\n|---------|-----------|------------|------------------|---------|--------------|-------------|\n\n---\n\n# Przesłanie plików\ncurl -X POST https://n8n.k8s.COMPANY.DOMAIN/webhook-test/stary \\\n  -F \"stary_raport=@stary_raport.xlsx\" \\\n  -F \"nowy_raport=@nowy_raport.xlsx\"",
+        "height": 1104,
+        "width": 2416,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -224,
+        2512
+      ],
+      "typeVersion": 1,
+      "id": "f3426e56-ce69-4cb5-bc48-190d5844467a",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "operation": "xlsx",
+        "binaryPropertyName": "k8s_multitenant.xlsx",
+        "options": {
+          "fileName": "Raport_k8s_multitenant.xlsx",
+          "sheetName": "k8s_multitenant"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        1616,
+        2848
+      ],
+      "id": "e5b536ce-9625-43b9-a3c1-6fc40d3a5616",
+      "name": "Convert to File1"
+    },
+    {
+      "parameters": {
+        "fromEmail": "n8n@auto.COMPANY.DOMAIN",
+        "toEmail": "USER@COMPANY.DOMAIN",
+        "subject": "Raport K8S - rozliczanie kosztów",
+        "html": "W załączeniu raport K8S - rozliczanie kosztów",
+        "options": {
+          "appendAttribution": false,
+          "attachments": "rozliczanie_kosztow.xlsx"
+        }
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        1984,
+        1600
+      ],
+      "id": "e32cf0d7-8030-410e-8a38-905a5c7f9e87",
+      "name": "Send email1",
+      "webhookId": "REDACTED_WEBHOOK_ID",
+      "credentials": {
+        "smtp": {
+          "id": "REDACTED_CREDENTIAL_ID",
+          "name": "n8n@auto.COMPANY.DOMAIN"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://glpi.pl/apirest.php/initSession",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "user_token `"
+            },
+            {
+              "name": "App-Token",
+              "value": ""
+            }
+          ]
+        },
+        "options": {
+          "allowUnauthorizedCerts": true
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        416,
+        -512
+      ],
+      "id": "ac82aed8-840c-434c-bd96-c4429013eb1e",
+      "name": "Pobranie session_token3"
+    },
+    {
+      "parameters": {
+        "url": "=https://glpi.pl/apirest.php/search/Computer\n?range=0-3000\n&forcedisplay[0]=1\n&forcedisplay[1]=111\n&forcedisplay[2]=18\n&forcedisplay[3]=34\n&forcedisplay[4]=76679\n&forcedisplay[5]=160\n&forcedisplay[6]=161\n&forcedisplay[7]=164\n&forcedisplay[8]=165\n&forcedisplay[9]=4\n&forcedisplay[10]=31\n&forcedisplay[11]=24",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Session-Token",
+              "value": "={{ $json.session_token }}"
+            },
+            {
+              "name": "App-Token",
+              "value": ""
+            }
+          ]
+        },
+        "options": {
+          "allowUnauthorizedCerts": true
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        640,
+        -512
+      ],
+      "id": "cc0b9541-d979-445b-9b0f-ff223e95ee58",
+      "name": "Pobranie listy wszystkich hostów1"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "data",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        864,
+        -512
+      ],
+      "id": "3c92b896-fc4a-44d8-ad87-5b5aebb09ea3",
+      "name": "Split Out1"
+    },
+    {
+      "parameters": {
+        "operation": "xlsx",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        1344,
+        -512
+      ],
+      "id": "6a5e9132-c618-41b0-873b-6fbf38ff3620",
+      "name": "Convert to File2"
+    },
+    {
+      "parameters": {
+        "url": "=https://glpi.pl/apirest.php/killSession",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Session-Token",
+              "value": "={{ $('Pobranie session_token3').item.json.session_token }}"
+            },
+            {
+              "name": "App-Token",
+              "value": ""
+            }
+          ]
+        },
+        "options": {
+          "allowUnauthorizedCerts": true
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        864,
+        -320
+      ],
+      "id": "99853411-380b-4c3e-9d85-864a196e3b6b",
+      "name": "GLPI - ubicie sesji1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "078be3bf-7d06-4eb7-a2b2-e657e9958605",
+              "name": "Nazwa hosta",
+              "value": "={{ $json['1'] }}",
+              "type": "string"
+            },
+            {
+              "id": "1c6a9552-7e51-491a-a5df-2ffa8386a8aa",
+              "name": "Osoba odpowiedzialna",
+              "value": "={{ $json['24'] }}",
+              "type": "string"
+            },
+            {
+              "id": "53d4909d-c556-48a1-9798-6bf681fe5523",
+              "name": "Produkt",
+              "value": "={{ $json['76679'] }}",
+              "type": "string"
+            },
+            {
+              "id": "7d5ff731-e545-4cd0-9fc0-ae9dbbc77f64",
+              "name": "Typ",
+              "value": "={{ $json['4'] }}",
+              "type": "string"
+            },
+            {
+              "id": "4c51696f-225d-4984-a26f-db221a1132d2",
+              "name": "Status",
+              "value": "={{ $json['31'] }}",
+              "type": "string"
+            },
+            {
+              "id": "93e1010e-17ae-4a66-988f-99d1e1f1bf88",
+              "name": "Procesor HV: Liczba rdzeni",
+              "value": "={{ $json['18'] }}",
+              "type": "string"
+            },
+            {
+              "id": "4589e34e-6e40-4707-914d-3260dd28f9f2",
+              "name": "Procesor HV: liczba wątków",
+              "value": "={{ $json['34'] }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1072,
+        -512
+      ],
+      "id": "114c420d-8544-4234-a200-46fec7785c05",
+      "name": "Raport - Wskazanie kolumn1"
+    },
+    {
+      "parameters": {
+        "url": "https://glpi.pl/apirest.php/initSession",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "user_token `"
+            },
+            {
+              "name": "App-Token",
+              "value": ""
+            }
+          ]
+        },
+        "options": {
+          "allowUnauthorizedCerts": true
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        496,
+        -864
+      ],
+      "id": "2d4a0ad0-b809-4bb4-a084-e29f26779065",
+      "name": "Pobranie session_token4"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n// Mapa maszyn po nazwie (pole 1)\nconst machines = {};\nfor (const item of items) {\n  machines[item.json[\"1\"]] = item.json;\n}\n\n// Funkcja pomocnicza do zamiany kropki na przecinek\nconst formatWithComma = (num) => num.toString().replace('.', ',');\n\nconst result = [];\nfor (const item of items) {\n  const hvData = item.json;\n  const hostName = hvData[\"1\"];\n  const vmField = hvData[\"160\"];\n  if (!vmField) continue;\n  let vms = [];\n  // Obsługa różnych formatów pola 160\n  if (Array.isArray(vmField)) {\n    vms = vmField;\n  } else if (typeof vmField === 'string') {\n    try {\n      vms = JSON.parse(vmField);\n    } catch {\n      vms = [vmField];\n    }\n  } else {\n    vms = [vmField];\n  }\n  for (const vm of vms) {\n    const vmData = machines[vm];\n    if (vmData) {\n      const hvThreads = parseInt(hvData[\"34\"]);\n      const hvRam = parseInt(hvData[\"111\"]);\n      const vmThreads = parseInt(vmData[\"34\"]);\n      const vmRam = parseInt(vmData[\"111\"]);\n      const vmProduct = vmData[\"76679\"] ?? \"\"; // domyślnie pusty string jeśli brak produktu\n      const threadRatio = +(vmThreads / hvThreads).toFixed(4);\n      const ramRatio = +(vmRam / hvRam).toFixed(4);\n      const greaterRatio = Math.max(threadRatio, ramRatio);\n      result.push({\n        json: {\n          HV: hostName,\n          \"HV - Liczba wątków\": hvThreads,\n          \"HV - RAM (MB)\": hvRam,\n          \"HV - Produkt\": hvData[\"76679\"],\n          \"Maszyna wirtualna\": vm,\n          \"VM - Liczba wątków\": vmThreads,\n          \"VM - RAM (MB)\": vmRam,\n          \"VM - Produkt\": vmProduct,\n          \"Stosunek wątków VM do HV\": formatWithComma(threadRatio),\n          \"Stosunek RAM VM do HV (MB)\": formatWithComma(ramRatio),\n          \"Największy współczynnik zasobów VM/HV\": formatWithComma(greaterRatio)\n        }\n      });\n    }\n  }\n}\n// Podział wyników na te z pustym VM - Produkt i te z uzupełnionym\nconst emptyProduct = result.filter(entry => !entry.json[\"VM - Produkt\"]);\nconst withProduct = result.filter(entry => entry.json[\"VM - Produkt\"]);\nreturn [...emptyProduct, ...withProduct];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1648,
+        1136
+      ],
+      "id": "e67e8974-d131-4da3-9024-ad33af7eaa08",
+      "name": "Code - tworzenie - pierwotny"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\n// Mapa maszyn po nazwie (pole 1)\nconst machines = {};\nfor (const item of items) {\n  machines[item.json[\"1\"]] = item.json;\n}\n\nconst formatWithComma = (num) => parseFloat(num.toFixed(4));\n\n// 🔧 Prosty i spójny przelicznik dla GLPI-Agent\nfunction computeTotalThreads(agentStr, coresRaw, threadsRaw) {\n  const isGlpi = (agentStr || \"\").includes(\"GLPI-Agent\");\n  const cores = parseFloat(coresRaw) || 0;\n  const t = parseFloat(threadsRaw) || 0;\n\n  if (!isGlpi) return Math.floor(t); // FusionInventory już zwraca total\n  if (cores === 0 || t === 0) return 0;\n\n  // Reguła: 18 × (34 / 2)\n  return Math.floor(cores * (t / 2));\n}\n\nconst result = [];\n\nfor (const item of items) {\n  const hvData = item.json;\n  const hostName = hvData[\"1\"];\n  const vmField = hvData[\"160\"];\n  if (vmField === undefined || vmField === null) continue;\n\n  const agent = hvData[\"5160\"] || \"\";\n\n  // Znormalizuj 160 → zawsze tablica\n  let vms = [];\n  if (Array.isArray(vmField)) {\n    vms = vmField;\n  } else if (typeof vmField === 'string') {\n    try {\n      const parsed = JSON.parse(vmField);\n      vms = Array.isArray(parsed) ? parsed : [String(parsed)];\n    } catch {\n      vms = [vmField];\n    }\n  } else if (typeof vmField === 'number') {\n    vms = [String(vmField)];\n  } else {\n    vms = [String(vmField)];\n  }\n\n  // Oblicz zasoby HV\n  const hvThreads = computeTotalThreads(agent, hvData[\"18\"], hvData[\"34\"]);\n  const hvRam = parseFloat(hvData[\"111\"]) || 0;\n\n  for (const vm of vms) {\n    const vmData = machines[vm];\n    if (!vmData) continue;\n\n    const vmThreads = parseFloat(vmData[\"34\"]) || 0;\n    const vmRam = parseFloat(vmData[\"111\"]) || 0;\n    const vmProduct = vmData[\"76679\"] ?? \"\";\n\n    const threadRatio = hvThreads ? +(vmThreads / hvThreads).toFixed(4) : 0;\n    const ramRatio = hvRam ? +(vmRam / hvRam).toFixed(4) : 0;\n    const greaterRatio = Math.max(threadRatio, ramRatio);\n\n    result.push({\n      json: {\n        HV: hostName,\n        \"HV - Liczba wątków\": hvThreads,\n        \"HV - RAM (MB)\": hvRam,\n        \"HV - Produkt\": hvData[\"76679\"],\n        \"Maszyna wirtualna\": vm,\n        \"VM - Liczba wątków\": vmThreads,\n        \"VM - RAM (MB)\": vmRam,\n        \"VM - Produkt\": vmProduct,\n        \"Stosunek wątków VM do HV\": formatWithComma(threadRatio),\n        \"Stosunek RAM VM do HV (MB)\": formatWithComma(ramRatio),\n        \"Największy współczynnik zasobów VM/HV\": formatWithComma(greaterRatio),\n        \"Agent\": agent // ⬅️ przeniesiony na sam koniec\n      }\n    });\n  }\n}\n\n// Najpierw z produktem, potem puste\nconst withProduct = result.filter(e => e.json[\"VM - Produkt\"]);\nconst emptyProduct = result.filter(e => !e.json[\"VM - Produkt\"]);\nreturn [...withProduct, ...emptyProduct];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1296,
+        1376
+      ],
+      "id": "e70169ed-9138-491e-9fca-d1ab0d517ced",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "jsCode": "const keysToKeep = [\"1\", \"34\", \"111\", \"76679\"];\n\nreturn items\n  .filter(item => {\n    const nodeName = item.json[\"1\"];\n    return /^kub\\d+n\\d+$/.test(nodeName);\n  })\n  .map(item => {\n    const output = {};\n    for (const key of keysToKeep) {\n      if (item.json.hasOwnProperty(key)) {\n        let value = item.json[key];\n        // Przekształć do liczby całkowitej, jeśli to liczba zmiennoprzecinkowa\n        if (!isNaN(value)) {\n          const num = parseFloat(value);\n          output[key] = Number.isNaN(num) ? value : Math.floor(num);\n        } else {\n          output[key] = value;\n        }\n      }\n    }\n    return { json: output };\n  });\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1888,
+        1136
+      ],
+      "id": "9819454c-4b3d-4f11-ac9e-65a7b0495dde",
+      "name": "Wydzielenie kub(cyfry)n(cyfry) - pierwotny"
+    },
+    {
+      "parameters": {
+        "url": "=https://glpi.pl/apirest.php/listSearchOptions/Computer",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Session-Token",
+              "value": "={{ $json.session_token }}"
+            },
+            {
+              "name": "App-Token",
+              "value": ""
+            }
+          ]
+        },
+        "options": {
+          "allowUnauthorizedCerts": true
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        720,
+        -864
+      ],
+      "id": "b8970a18-7c83-414f-8633-0c4c2b140c6b",
+      "name": "Pobranie listy wszystkich pól"
+    }
+  ],
+  "pinData": {
+    "stary_raport": [
+      {
+        "json": {
+          "Cluster": "",
+          "Namespace": "bit-dev-donald",
+          "Annotation": "USER@COMPANY.DOMAIN",
+          "Effective Usage": "0.521245842522372"
+        }
+      },
+      {
+        "json": {
+          "Cluster": "",
+          "Namespace": "bl-grafana-dev",
+          "Annotation": "USER@COMPANY.DOMAIN",
+          "Effective Usage": "0.00847564014212119"
+        }
+      },
+      {
+        "json": {
+          "Cluster": "",
+          "Namespace": "dc-prod-logses",
+          "Annotation": "USER@COMPANY.DOMAIN",
+          "Effective Usage": "0.0128382815338747"
+        }
+      },
+      {
+        "json": {
+          "Cluster": "",
+          "Namespace": "dpa-grafana-dev",
+          "Annotation": "USER@COMPANY.DOMAIN",
+          "Effective Usage": "0.0234468547920151"
+        }
+      },
+      {
+        "json": {
+          "Cluster": "",
+          "Namespace": "elastic-operator",
+          "Annotation": "USER@COMPANY.DOMAIN",
+          "Effective Usage": "0.00934813324595439"
+        }
+      },
+      {
+        "json": {
+          "Cluster": "",
+          "Namespace": "external-traffic-policy-test",
+          "Annotation": "USER@COMPANY.DOMAIN",
+          "Effective Usage": "0.16420602744867"
+        }
+      },
+      {
+        "json": {
+          "Cluster": "",
+          "Namespace": "externaldns",
+          "Annotation": "USER@COMPANY.DOMAIN",
+          "Effective Usage": "0.0119656095838483"
+        }
+      },
+      {
+        "json": {
+          "Cluster": "",
+          "Namespace": "grafana-pg-dev-bl",
+          "Annotation": "USER@COMPANY.DOMAIN",
+          "Effective Usage": "0.0150651354354727"
+        }
+      },
+      {
+        "json": {
+          "Cluster": "",
+          "Namespace": "harbor-test-2",
+          "Annotation": "USER@COMPANY.DOMAIN",
+          "Effective Usage": "0.0159541454644823"
+        }
+      },
+      {
+        "json": {
+          "Cluster": "",
+          "Namespace": "hd-sandbox-ai-helpdesk",
+          "Annotation": "USER@COMPANY.DOMAIN",
+          "Effective Usage": "0.0788656205986671"
+        }
+      },
+      {
+        "json": {
+          "Cluster": "",
+          "Namespace": "ingress-nginx",
+          "Annotation": "USER@COMPANY.DOMAIN",
+          "Effective Usage": "0.0957248805546799"
+        }
+      },
+      {
+        "json": {
+          "Cluster": "",
+          "Namespace": "kube-logging",
+          "Annotation": "USER@COMPANY.DOMAIN",
+          "Effective Usage": "0.0181477541040968"
+        }
+      },
+      {
+        "json": {
+          "Cluster": "",
+          "Namespace": "kube-system",
+          "Annotation": "USER@COMPANY.DOMAIN",
+          "Effective Usage": "0.800775949137805"
+        }
+      },
+      {
+        "json": {
+          "Cluster": "",
+          "Namespace": "kyverno",
+          "Annotation": "USER@COMPANY.DOMAIN",
+          "Effective Usage": "0.00997134334273462"
+        }
+      },
+      {
+        "json": {
+          "Cluster": "",
+          "Namespace": "mdb-irv",
+          "Annotation": "USER@COMPANY.DOMAIN",
+          "Effective Usage": "0.516860876018607"
+        }
+      },
+      {
+        "json": {
+          "Cluster": "",
+          "Namespace": "minio2",
+          "Annotation": "USER@COMPANY.DOMAIN",
+          "Effective Usage": "0.00188336429938301"
+        }
+      },
+      {
+        "json": {
+          "Cluster": "",
+          "Namespace": "nginx-cas-redis",
+          "Annotation": "USER@COMPANY.DOMAIN",
+          "Effective Usage": "0.229534215311188"
+        }
+      },
+      {
+        "json": {
+          "Cluster": "",
+          "Namespace": "observability",
+          "Annotation": "USER@COMPANY.DOMAIN",
+          "Effective Usage": "0.0159541474064288"
+        }
+      },
+      {
+        "json": {
+          "Cluster": "",
+          "Namespace": "opencost",
+          "Annotation": "USER@COMPANY.DOMAIN",
+          "Effective Usage": "0.0034290720927946"
+        }
+      },
+      {
+        "json": {
+          "Cluster": "",
+          "Namespace": "postgres-operator",
+          "Annotation": "USER@COMPANY.DOMAIN",
+          "Effective Usage": "0.00779148546262339"
+        }
+      },
+      {
+        "json": {
+          "Cluster": "",
+          "Namespace": "prewms-dev-exo",
+          "Annotation": "USER@COMPANY.DOMAIN",
+          "Effective Usage": "0.0529741730228701"
+        }
+      },
+      {
+        "json": {
+          "Cluster": "",
+          "Namespace": "prewms-dev-nst",
+          "Annotation": "USER@COMPANY.DOMAIN",
+          "Effective Usage": "0.00398996001787898"
+        }
+      },
+      {
+        "json": {
+          "Cluster": "",
+          "Namespace": "prometheus",
+          "Annotation": "USER@COMPANY.DOMAIN",
+          "Effective Usage": "0.147207054538977"
+        }
+      },
+      {
+        "json": {
+          "Cluster": "",
+          "Namespace": "rabbitmq-operator",
+          "Annotation": "USER@COMPANY.DOMAIN",
+          "Effective Usage": "0.0199426818306028"
+        }
+      },
+      {
+        "json": {
+          "Cluster": "",
+          "Namespace": "skaffold",
+          "Annotation": "USER@COMPANY.DOMAIN",
+          "Effective Usage": "0.00797707273224114"
+        }
+      },
+      {
+        "json": {
+          "Cluster": "",
+          "Namespace": "trivy-operator",
+          "Annotation": "USER@COMPANY.DOMAIN",
+          "Effective Usage": "0.0584620119462601"
+        }
+      },
+      {
+        "json": {
+          "Cluster": "",
+          "Namespace": "velero",
+          "Annotation": "USER@COMPANY.DOMAIN",
+          "Effective Usage": "0.305204678444476"
+        }
+      },
+      {
+        "json": {
+          "Cluster": "",
+          "Namespace": "velero-minio",
+          "Annotation": "USER@COMPANY.DOMAIN",
+          "Effective Usage": "0.12763495499856"
+        }
+      },
+      {
+        "json": {
+          "Cluster": "",
+          "Namespace": "zabbix",
+          "Annotation": "USER@COMPANY.DOMAIN",
+          "Effective Usage": "0.0201103929872368"
+        }
+      },
+      {
+        "json": {
+          "Cluster": "",
+          "Namespace": "zabbix-sigv4-proxy",
+          "Annotation": "USER@COMPANY.DOMAIN",
+          "Effective Usage": "0.00199426866854692"
+        }
+      },
+      {
+        "json": {
+          "Cluster": "kubdev-abs-01",
+          "Namespace": "accelq",
+          "Annotation": "USER@COMPANY.DOMAIN",
+          "Effective Usage": "0.0681057706555835"
+        }
+      },
+      {
+        "json": {
+          "Cluster": "",
+          "Namespace": "zabbix-sigv4-proxy",
+          "Annotation": "USER@COMPANY.DOMAIN",
+          "Effective Usage": "0.004002768516407955"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Pobranie session_token": {
+      "main": [
+        [
+          {
+            "node": "Wyszukanie usera w bazie GLPI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wyszukanie usera w bazie GLPI": {
+      "main": [
+        [
+          {
+            "node": "Wydobycie id usera",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wydobycie id usera": {
+      "main": [
+        [
+          {
+            "node": "Wydzielenie ID usera",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wydzielenie ID usera": {
+      "main": [
+        [
+          {
+            "node": "Komputery przypisane do usera",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Komputery przypisane do usera": {
+      "main": [
+        [
+          {
+            "node": "Wydzielenie osobnych pozycji",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wydzielenie osobnych pozycji": {
+      "main": [
+        [
+          {
+            "node": "Wskazanie kolumn do raportu",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wskazanie kolumn do raportu": {
+      "main": [
+        [
+          {
+            "node": "Sumowanie backupów cappo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sumowanie backupów cappo": {
+      "main": [
+        [
+          {
+            "node": "Konwersja do XLSX",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Konwersja do XLSX": {
+      "main": [
+        [
+          {
+            "node": "GLPI - Kill sesion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wydzielenie osobnych pozycji1": {
+      "main": [
+        [
+          {
+            "node": "Wskazanie kolumn do raportu1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wskazanie kolumn do raportu1": {
+      "main": [
+        [
+          {
+            "node": "Sumowanie backupów",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Konwersja do XLSX1": {
+      "main": [
+        [
+          {
+            "node": "GLPI - Kill sesion1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Podaj Produkt": {
+      "main": [
+        [
+          {
+            "node": "Pobranie session_token1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Podaj imię i nazwisko": {
+      "main": [
+        [
+          {
+            "node": "Pobranie session_token",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pobranie session_token1": {
+      "main": [
+        [
+          {
+            "node": "Lista komputerów po wybranym produkcie",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lista komputerów po wybranym produkcie": {
+      "main": [
+        [
+          {
+            "node": "Wydzielenie osobnych pozycji1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Test workflow’": {
+      "main": [
+        [
+          {
+            "node": "GLPI - Pobranie session_token",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pobranie session_token2": {
+      "main": [
+        [
+          {
+            "node": "Pobranie listy wszystkich hostów",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pobranie listy wszystkich hostów": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "GLPI - ubicie sesji",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Raport - Wskazanie kolumn",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sumowanie backupów": {
+      "main": [
+        [
+          {
+            "node": "Konwersja do XLSX1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sum backup": {
+      "main": [
+        [
+          {
+            "node": "Convert to File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Raport - Wskazanie kolumn": {
+      "main": [
+        [
+          {
+            "node": "Sum backup",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out data proxkub": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out data gpu": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Split Out data all hosts": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "GLPI - Pobranie session_token": {
+      "main": [
+        [
+          {
+            "node": "GLPI - Pobranie wszystkich hostów",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "GLPI - Pobranie listy proxkub",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "GLPI - Pobranie listy gpu",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "GLPI - Pobranie listy kub",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "GLPI - ubicie sesji ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GLPI - Pobranie listy proxkub": {
+      "main": [
+        [
+          {
+            "node": "Split Out data proxkub",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GLPI - Pobranie listy gpu": {
+      "main": [
+        [
+          {
+            "node": "Split Out data gpu",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GLPI - Pobranie wszystkich hostów": {
+      "main": [
+        [
+          {
+            "node": "Split Out data all hosts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GLPI - Pobranie listy kub": {
+      "main": [
+        [
+          {
+            "node": "Split Out data kub",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out data kub": {
+      "main": [
+        [
+          {
+            "node": "Wydzielenie kub(cyfry)n(cyfry)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge again": {
+      "main": [
+        [
+          {
+            "node": "Zapis do XLSX",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wydzielenie pól do raportu": {
+      "main": [
+        [
+          {
+            "node": "Merge again",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Wydzielenie kub(cyfry)n(cyfry)": {
+      "main": [
+        [
+          {
+            "node": "Wydzielenie pól do raportu",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "stary_raport",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "nowy_raport",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Convert to File1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "stary_raport": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "nowy_raport": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to File1": {
+      "main": [
+        [
+          {
+            "node": "Send email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Zapis do XLSX": {
+      "main": [
+        [
+          {
+            "node": "Send email1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pobranie session_token3": {
+      "main": [
+        [
+          {
+            "node": "Pobranie listy wszystkich hostów1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pobranie listy wszystkich hostów1": {
+      "main": [
+        [
+          {
+            "node": "Split Out1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "GLPI - ubicie sesji1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out1": {
+      "main": [
+        [
+          {
+            "node": "Raport - Wskazanie kolumn1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Raport - Wskazanie kolumn1": {
+      "main": [
+        [
+          {
+            "node": "Convert to File2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pobranie session_token4": {
+      "main": [
+        [
+          {
+            "node": "Pobranie listy wszystkich pól",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Merge again",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "MOZ46ZlywrBFnj0Z"
+  },
+  "versionId": "a7c1bc59-5c60-4c6e-a2ab-f8ab8356386a",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "REDACTED_INSTANCE_ID"
+  },
+  "id": "REDACTED_CREDENTIAL_ID",
+  "tags": []
+}

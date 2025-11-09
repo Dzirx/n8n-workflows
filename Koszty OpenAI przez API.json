@@ -1,0 +1,533 @@
+{
+  "name": "Koszty OpenAI przez API",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "openai-billing",
+        "formTitle": "Analiza Billingów API OpenAI",
+        "formDescription": "Wygeneruj raport kosztów OpenAI dla wybranego projektu i okresu",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Projekt",
+              "placeholder": "Podaj MPK lub ALL, żeby zobaczyć wszystkie",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Data początkowa",
+              "fieldType": "date",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Data końcowa",
+              "fieldType": "date",
+              "requiredField": true
+            }
+          ]
+        },
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "bf460ad9-d860-4a9d-a5ea-88a7e7d977ae",
+      "name": "Form Trigger",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.1,
+      "position": [
+        -1408,
+        320
+      ],
+      "webhookId": "REDACTED_WEBHOOK_ID",
+      "notesInFlow": false
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "organization-id",
+              "name": "organization_id",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "project",
+              "name": "project",
+              "value": "={{ $json['Projekt'] }}",
+              "type": "string"
+            },
+            {
+              "id": "start-date",
+              "name": "start_date",
+              "value": "={{ $json['Data początkowa'] }}",
+              "type": "string"
+            },
+            {
+              "id": "end-date",
+              "name": "end_date",
+              "value": "={{ $json['Data końcowa'] }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e2d2bd4f-2cd8-40e4-9960-14185a25a1d0",
+      "name": "Globals",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1184,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Pobierz daty z argumentów lub użyj domyślnych\nconst startDate = $input.first().json.start_date || null;\nconst endDate = $input.first().json.end_date || null;\n\n// Jeśli nie podano dat, użyj wczorajszego dnia\nif (!startDate || !endDate) {\n  const yesterday = new Date();\n  yesterday.setDate(yesterday.getDate() - 1);\n  \n  const startDateStr = yesterday.toISOString().split('T')[0] + ' 00:00:00';\n  const endDateStr = yesterday.toISOString().split('T')[0] + ' 23:59:59';\n  \n  // Konwertuj na timestampy (dodaj 2 godziny dla strefy czasowej)\n  const startTime = Math.floor((new Date(startDateStr).getTime() + 2 * 60 * 60 * 1000) / 1000);\n  const endTime = Math.floor((new Date(endDateStr).getTime() + 2 * 60 * 60 * 1000) / 1000);\n  \n  return [{\n    json: {\n      startTime,\n      endTime,\n      startDate: startDateStr,\n      endDate: endDateStr\n    }\n  }];\n} else {\n  // Konwertuj podane daty na timestampy\n  const startTime = Math.floor((new Date(startDate + ' 00:00:00').getTime() + 2 * 60 * 60 * 1000) / 1000);\n  const endTime = Math.floor((new Date(endDate + ' 23:59:59').getTime() + 2 * 60 * 60 * 1000) / 1000);\n  \n  return [{\n    json: {\n      startTime,\n      endTime,\n      startDate: startDate + ' 00:00:00',\n      endDate: endDate + ' 23:59:59'\n    }\n  }];\n}"
+      },
+      "id": "49ecf7d5-d7e9-4ca9-acfe-385fceca7895",
+      "name": "Date Processor",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -960,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Lista projektów (skopiowana z oryginalnego workflow)\nconst projects = $input.first().json.data;\n\nlet filteredProjects = [];\nconst projectName = $('Globals').first().json.project;\nif (projectName == \"ALL\") {\n  filteredProjects = projects;\n} else {\n  filteredProjects = projects.filter(prj => prj.name == projectName);\n}\n\nif (filteredProjects.length == 0) {\n  return [{json: {result: \"brak\"}}];\n}\n\nconst { startTime, endTime } = $input.first().json;\n\n// Przygotuj dane dla każdego projektu\nconst projectData = filteredProjects.map(project => ({\n  json: {\n    projectName: project.name,\n    projectId: project.id,\n    startTime,\n    endTime\n  }\n}));\n\nreturn projectData;"
+      },
+      "id": "8d557022-33b2-4907-80f4-de959e934fa6",
+      "name": "Project Preparator",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -512,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "check-projects",
+              "leftValue": "={{ $json.result }}",
+              "rightValue": "brak",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "d5363520-726a-41c5-92f3-f75dc4ff6e24",
+      "name": "If Projects Exist",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -288,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://api.openai.com/v1/organization/costs",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "start_time",
+              "value": "={{ $('Date Processor').item.json.startTime }}"
+            },
+            {
+              "name": "end_time",
+              "value": "={{ $('Date Processor').item.json.endTime }}"
+            },
+            {
+              "name": "project_ids",
+              "value": "={{ $json.projectId }}"
+            },
+            {
+              "name": "limit",
+              "value": "31"
+            },
+            {
+              "name": "group_by",
+              "value": "project_id"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Openai-Organization",
+              "value": ""
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "306e8fa4-1c8f-497e-98cf-5662959fd9c0",
+      "name": "Get Costs",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        160,
+        224
+      ],
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "REDACTED_CREDENTIAL_ID",
+          "name": "Admin API-KEY"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Process all items from Get Costs in parallel\n// Since each execution processes one project, we get the project info from Project Preparator\nconst allItems = $input.all();\nconst projectData = $(\"Project Preparator\").all();\nconst projectCosts = {};\nconst projectMap = {};\nprojectData.forEach((project) => {\n    projectCosts[project.json.projectId] = 0;\n    projectMap[project.json.projectId] = project.json.projectName;\n    \n});\n\nconst results = [];\n\n// return {len:allItems[0].json.data};\n// Process each cost response\nconst dataArray = allItems[0].json.data;\n\nfor (let d = 0; d < dataArray.length; d++) {\n    data = dataArray[d].results;\n\n    for (let i = 0; i < data.length; i++) {\n        const costData = data[i];\n\n        \n        if (costData) {\n\n        // Get project name from the preparator data\n            projectCosts[costData.project_id] += costData.amount.value;\n        }\n        \n    }\n}\nObject.keys(projectCosts).forEach((key) => {\n    const amount = projectCosts[key];\n    const projectKey = projectMap[key]\n    if (amount > 0) {\n        results.push({\n            json: {\n                result: amount,\n                project: projectKey,\n            },\n        });\n    }\n});\nreturn results;\n"
+      },
+      "id": "bfc17ee6-2fa9-4bef-b069-6317c937b4d7",
+      "name": "Sum Costs",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        384,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "id": "f4ff435d-da75-4b3e-9225-064267933237",
+      "name": "Aggregate",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        608,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "function transformProjectData(inputData) {\n    const projects = inputData.json;\n    \n    const totalAmount = projects.data.reduce((sum, project) => sum + project.result, 0);\n    \n    const result = {};\n\n    let sumAmount = 0.0;\n    let sumPct = 0.0;\n    \n    projects.data.forEach(project => {\n        const amount = Math.round(project.result * 100) / 100;\n        const pct = Math.round((project.result / totalAmount) * 100 * 10);\n\n        if (amount > 0) {\n          sumAmount += amount;\n          sumPct += pct;\n         \n          result[project.project] = {\n              amount: amount,\n              pct: pct / 10\n          };\n        }\n    });\n  \n    return {result: result, summary: {amount: sumAmount, pct: sumPct / 10}};\n}\n\nconst inputData = $input.first();\nconst results = transformProjectData(inputData);\n\nreturn {json: {result: results}};"
+      },
+      "id": "2188603f-91f8-41ee-8126-0efc7226a952",
+      "name": "Transform Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        832,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.result }}",
+        "options": {
+          "systemMessage": "Jesteś specjalistą od HTML. Napisz pełny kod strony w HTML do prezentacji danych, które zostaną przekazane. Json zawiera informacje o kosztach w podziale na grupy z procentową wartością. Przedstaw w formie tabeli z kolumnami: Grupa, Kwota USD, Procent. Dodaj nagłówek 'OpenAI Billing Report' i podstawowe style CSS. Na końcu dodaj link 'Wróć do formularza' który prowadzi do /form/openai-billing. \nDodaj na końcu wiersz z podsumowaniem.\n\nZwróć wyłącznie HTML bez dodawania jakichkolwiek dodatkowych informacji."
+        }
+      },
+      "id": "9c2a161e-e0b7-4898-be50-114924eba0ce",
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.1,
+      "position": [
+        1056,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "id": "4d085274-6a99-4527-81da-496a8c9f9ce2",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1152,
+        448
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "REDACTED_CREDENTIAL_ID",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.output.replace(\"```html\", \"\").replace(\"```\", \"\") }}",
+        "options": {}
+      },
+      "id": "f2bd4f31-d11d-4aa5-9ff5-3129e7ea11fd",
+      "name": "Respond Success",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        1456,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "=<!DOCTYPE html>\n<html lang=\"pl\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Błąd - Nieprawidłowy projekt</title>\n    <style>\n        * {\n            margin: 0;\n            padding: 0;\n            box-sizing: border-box;\n        }\n\n        body {\n            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;\n            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);\n            min-height: 100vh;\n            display: flex;\n            align-items: center;\n            justify-content: center;\n            padding: 20px;\n        }\n\n        .error-container {\n            background: white;\n            border-radius: 20px;\n            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);\n            padding: 40px;\n            max-width: 800px;\n            width: 100%;\n            text-align: center;\n            position: relative;\n            overflow: hidden;\n        }\n\n        .error-container::before {\n            content: '';\n            position: absolute;\n            top: 0;\n            left: 0;\n            right: 0;\n            height: 5px;\n            background: linear-gradient(90deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4);\n        }\n\n        .error-icon {\n            font-size: 80px;\n            color: #ff6b6b;\n            margin-bottom: 20px;\n            animation: shake 0.5s ease-in-out infinite alternate;\n        }\n\n        @keyframes shake {\n            0% { transform: translateX(0); }\n            100% { transform: translateX(5px); }\n        }\n\n        h1 {\n            color: #2c3e50;\n            font-size: 2.5em;\n            margin-bottom: 15px;\n            font-weight: 300;\n        }\n\n        .error-message {\n            color: #7f8c8d;\n            font-size: 1.2em;\n            margin-bottom: 30px;\n            line-height: 1.6;\n        }\n\n        .projects-section {\n            margin-top: 40px;\n            text-align: left;\n        }\n\n        .projects-title {\n            color: #2c3e50;\n            font-size: 1.5em;\n            margin-bottom: 20px;\n            text-align: center;\n            font-weight: 500;\n        }\n\n        .projects-grid {\n            display: grid;\n            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));\n            gap: 15px;\n            margin-bottom: 30px;\n        }\n\n        .project-item {\n            background: #f8f9fa;\n            border: 2px solid #e9ecef;\n            border-radius: 12px;\n            padding: 20px;\n            transition: all 0.3s ease;\n            cursor: pointer;\n            position: relative;\n        }\n\n        .project-item:hover {\n            transform: translateY(-3px);\n            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);\n            border-color: #667eea;\n        }\n\n        .project-name {\n            font-weight: 600;\n            color: #2c3e50;\n            font-size: 1.1em;\n            margin-bottom: 8px;\n        }\n\n        .project-id {\n            font-family: 'Courier New', monospace;\n            color: #6c757d;\n            font-size: 0.9em;\n            background: #e9ecef;\n            padding: 5px 10px;\n            border-radius: 6px;\n            word-break: break-all;\n        }\n\n        .back-button {\n            display: inline-block;\n            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);\n            color: white;\n            padding: 15px 30px;\n            text-decoration: none;\n            border-radius: 50px;\n            font-weight: 500;\n            transition: all 0.3s ease;\n            margin-top: 20px;\n            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);\n        }\n\n        .back-button:hover {\n            transform: translateY(-2px);\n            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);\n        }\n\n        .copy-btn {\n            position: absolute;\n            top: 10px;\n            right: 10px;\n            background: #667eea;\n            color: white;\n            border: none;\n            border-radius: 6px;\n            padding: 5px 10px;\n            font-size: 0.8em;\n            cursor: pointer;\n            opacity: 0;\n            transition: opacity 0.3s ease;\n        }\n\n        .project-item:hover .copy-btn {\n            opacity: 1;\n        }\n\n        .copy-btn:hover {\n            background: #5a6fd8;\n        }\n\n        @media (max-width: 768px) {\n            .error-container {\n                padding: 30px 20px;\n            }\n            \n            h1 {\n                font-size: 2em;\n            }\n            \n            .projects-grid {\n                grid-template-columns: 1fr;\n            }\n        }\n    </style>\n</head>\n<body>\n    <div class=\"error-container\">\n        <div class=\"error-icon\">⚠️</div>\n        <h1>Nieprawidłowy projekt</h1>\n        <p class=\"error-message\">\n            Podany identyfikator projektu jest nieprawidłowy lub nie istnieje w systemie.<br>\n            Sprawdź listę dostępnych projektów i wybierz właściwy.\n        </p>\n\n        <a href=\"#\" class=\"back-button\" onclick=\"window.location.reload()\">Wróć do poprzedniej strony</a>\n    </div>\n\n\n</body>\n</html>",
+        "options": {}
+      },
+      "id": "57c916a2-9706-4eba-afba-db61051c25ef",
+      "name": "Respond Error",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        -64,
+        416
+      ]
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "projectId"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        -64,
+        224
+      ],
+      "id": "55c11af2-13ec-4057-9112-e1e823ea1db6",
+      "name": "Aggregate1"
+    },
+    {
+      "parameters": {
+        "url": "https://api.openai.com/v1/organization/projects?limit=30&include_archived=false",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -752,
+        320
+      ],
+      "id": "a50d5b52-05fd-4b7c-8fdb-3f4cc044ee27",
+      "name": "HTTP Request1",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "REDACTED_CREDENTIAL_ID",
+          "name": "Admin API-KEY"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Form Trigger": {
+      "main": [
+        [
+          {
+            "node": "Globals",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Globals": {
+      "main": [
+        [
+          {
+            "node": "Date Processor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Date Processor": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Project Preparator": {
+      "main": [
+        [
+          {
+            "node": "If Projects Exist",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Projects Exist": {
+      "main": [
+        [
+          {
+            "node": "Aggregate1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Costs": {
+      "main": [
+        [
+          {
+            "node": "Sum Costs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sum Costs": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Transform Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transform Data": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Respond Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate1": {
+      "main": [
+        [
+          {
+            "node": "Get Costs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Project Preparator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "9FxfJlcAY3eZz6qu"
+  },
+  "versionId": "c9c4258c-ca4d-4d1f-9bcc-4bcc2fd2587d",
+  "meta": {
+    "instanceId": "REDACTED_INSTANCE_ID"
+  },
+  "id": "REDACTED_CREDENTIAL_ID",
+  "tags": [
+    {
+      "createdAt": "2025-07-23T09:54:14.732Z",
+      "updatedAt": "2025-07-23T09:54:14.732Z",
+      "id": "REDACTED_CREDENTIAL_ID",
+      "name": "OpenAI Billing"
+    }
+  ]
+}

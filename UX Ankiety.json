@@ -1,0 +1,581 @@
+{
+  "name": "UX Ankiety",
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "appxBa99kOMZYQk6a",
+          "mode": "list",
+          "cachedResultName": "Baza wiedzy Softlab WPF v2",
+          "cachedResultUrl": "https://airtable.com/appxBa99kOMZYQk6a"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblINxVAhytUudr1O",
+          "mode": "list",
+          "cachedResultName": "Obserwacje",
+          "cachedResultUrl": "https://airtable.com/appxBa99kOMZYQk6a/tblINxVAhytUudr1O"
+        },
+        "filterByFormula": "={{ $json.output }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        624,
+        496
+      ],
+      "id": "645a225b-d18a-4b1d-ba0e-915e82a9d8ff",
+      "name": "Search records",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "REDACTED_CREDENTIAL_ID",
+          "name": "Airtable Personal Access Token UX"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.userQuestion }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "Jesteś pomocnym asystentem dostarczającym formuły dla Airtable. Node w n8n do pobrania rekordów z tabeli. \n\n## Struktura danych\n\nPracujesz z tabelą z wynikami ankiet UX. Tabela składa się z **8 kolumn**:\n\n### Opis kolumn:\n\n1. **User ID** (Float)  \n   - Identyfikator użytkownika, który wypełnił ankietę  \n   - UWAGA: Może zawierać wartości puste\n\n2. **Data wysłania** (String)  \n   - Data i czas przesłania odpowiedzi ankietowej  \n   - Umożliwia analizę trendów czasowych\n\n3. **Element** (String)  \n   - Określa element systemu, którego dotyczy ocena/komentarz  \n   - **Lista możliwych wartości:**\n     - Praca na pojedynczym rekordzie\n     - Praca grupowa (na wielu rekordach na raz)\n     - Asystenci AI czatboty\n     - Dashboardy analizy raporty\n     - Eksporty importy integracje\n     - Filtrowanie sortowanie wyszukiwanie\n     - Instalacja i konfiguracja aplikacji\n     - Komunikaty i powiadomienia\n     - Logowanie do aplikacji\n     - Obsługa mobilna\n     - Nawigacja (menu zakładki przyciski skróty)\n     - Ogólna estetyka\n     - Personalizacja\n     - Pomoc i dokumentacja\n     - Prędkość i błędy\n     - NO CATEGORY\n\n4. **Wersja** (Float)  \n   - Wersja systemu lub elementu, którego dotyczy ocena  \n   - Umożliwia analizę porównawczą między wersjami\n\nMusi to być poprawna formuła do wykonania zapytania AirTable.\nPodaj wyłącznie formułę i nic więcej. Nie otaczaj warunku cudzysłowami. Jeśli nie udało się skonstruować żadnego warunku zwróć \"BRAK\"\n\nBelow are some common formulas:\n- Name field = Hawaii\n\"({Field Name} = 'Hawaii')\"\n\n- Name field isn't empty\n\"NOT({Name} = '')\"\n\n- Field Contains Hawaii\n\"Search('Hawaii', {Field Name})\"\n\n- Field is greater than 17\n\"({Field Name} > 17)\"\n\n**Beware of Parentheses**\nuse only Element field if there is no additional needs\nElement field has list of value"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        -16,
+        656
+      ],
+      "id": "654dd28a-faea-4da5-a5d6-cc42b3eee3ae",
+      "name": "AI Agent1"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "={{ $json.model_name }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        64,
+        880
+      ],
+      "id": "dfa01d53-b640-44de-8199-9e9ac02d5416",
+      "name": "OpenAI Chat Model1",
+      "credentials": {
+        "openAiApi": {
+          "id": "REDACTED_CREDENTIAL_ID",
+          "name": "Atlas API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "bcc05277-8e58-40db-afab-5efe6b6e1bd2",
+              "leftValue": "={{ $json.output }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "2d2b7815-43b9-4fee-8cef-1b042a8db416",
+              "leftValue": "={{ $json.output }}",
+              "rightValue": "BRAK",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        336,
+        656
+      ],
+      "id": "3ef72012-a30f-48ea-bca3-11987e350c4b",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Config').item.json.userQuestion }}",
+        "options": {
+          "systemMessage": "Jako pomocny asystent powiedz użytkownikowi, że jego pytanie jest głupie i nie wiesz o co mu chodzi. Niech przerobi pytanie, bo utkniemy jak koza w płocie.\nBądź sarkastyczny.\n\nWygeneruj atrakcyjną odpowiedź w formacie markdown."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        560,
+        800
+      ],
+      "id": "a31c0a18-7e1b-4b2c-80e8-687eb2f14659",
+      "name": "AI Agent2"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7bdf47a8-78f5-4d0b-9cbe-a47954489bbf",
+              "name": "userQuestion",
+              "value": "={{ $json.Pytanie || $json.chatInput }}",
+              "type": "string"
+            },
+            {
+              "id": "3a71849f-1593-4970-ad75-cf02114a7640",
+              "name": "model_name",
+              "value": "Qwen/Qwen3-30B-A3B-Instruct-2507",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -240,
+        496
+      ],
+      "id": "c5e198ec-3e77-4cba-8fc4-f19f7050f140",
+      "name": "Config"
+    },
+    {
+      "parameters": {
+        "batchSize": 10,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        912,
+        496
+      ],
+      "id": "ca2ac464-1034-47f6-b802-bb88af61a511",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Final question:\n{{ $('Config').first().json.userQuestion }}\n\nCurrent memory (so far):\n{{$json.memory}}\n\nNew batch (up to 10 records) in JSON:\n{{ JSON.stringify($items().map(i => i.json)) }}\n\nTask:\n1) Extract only the facts relevant to the final question.\n2) Merge them into the \"memory\".\n3) Return strictly JSON:\n   {\"updated_memory\": \"...\",\n   \"elements\": \"...\",\n    \"versions\": \"...\",\n    \"modules\": \"...\"} ",
+        "options": {
+          "systemMessage": "You are a helpful assistantYou are a reasoning agent. Maintain a running, compact memory that accumulates only facts relevant to answering the final question. Ignore noise, deduplicate.\nAlways answer in polish.\n\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        1712,
+        496
+      ],
+      "id": "628e581d-6c69-4e9b-ad2d-024e0f2191e4",
+      "name": "AI Agent3"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        1136,
+        496
+      ],
+      "id": "0a8db6f9-80ca-4f2d-94dc-0704149f7638",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "jsCode": "const output = JSON.parse($input.first().json.output)\n\nconst state = $getWorkflowStaticData('global');\nif (!state.counter) {\n  state.counter = 0;\n  state.items = \"\";\n}\nstate.counter++;\nstate.items = output[\"updated_memory\"];\n\nreturn state"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2064,
+        656
+      ],
+      "id": "da9e5a5f-9f5f-4538-8109-211485490fc9",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Final question:\n{{ $('Config').first().json.userQuestion }}\n\nAggregated memory with all relevant facts:\n{{ $json.items }}\n\nAlways answer in polish\n\nProduce the final answer. If there are uncertainties, list them explicitly.\nGenerate visually atractive markdown.",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        1360,
+        96
+      ],
+      "id": "ce255a18-9658-487f-b0f9-31f173a76838",
+      "name": "AI Agent4"
+    },
+    {
+      "parameters": {
+        "jsCode": "const state = $getWorkflowStaticData('global');\nconst data = $input.first().json.data\nfor (const item of data) {\n  delete item[\"id\"];\n  delete item[\"ID odpowiedzi\"];\n  delete item[\"Wnioski\"];\n  delete item[\"Badania\"];\n  delete item[\"User ID\"];\n  delete item[\"Do opracowania\"];\n  delete item[\"createdTime\"];\n}\n\nreturn {\"memory\": state.items || \"\",\n       \"data\": data};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1424,
+        496
+      ],
+      "id": "3a7e5bbf-f0f5-44d1-a982-0c732b8033a4",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "={{ $('Config').item.json.model_name }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        640,
+        1024
+      ],
+      "id": "b527efb6-2926-48a2-ac0b-923e11cbe4cd",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "REDACTED_CREDENTIAL_ID",
+          "name": "Atlas API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const ret= $input.last()\n\nreturn ret;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1136,
+        208
+      ],
+      "id": "6e82586c-7682-4871-995f-b01001e39720",
+      "name": "Code in JavaScript2"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1440,
+        320
+      ],
+      "id": "a9fc9e8f-66a0-464d-9de4-5603d067689b",
+      "name": "OpenAI Chat Model3",
+      "credentials": {
+        "openAiApi": {
+          "id": "REDACTED_CREDENTIAL_ID",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "{{ $('Config').item.json.model_name }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1792,
+        720
+      ],
+      "id": "1c886255-b439-4538-afc4-f21e3f14adee",
+      "name": "OpenAI Chat Model4",
+      "credentials": {
+        "openAiApi": {
+          "id": "REDACTED_CREDENTIAL_ID",
+          "name": "Atlas API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -464,
+        496
+      ],
+      "id": "c9698e56-f7e1-4535-8c79-f4e4e6a714e1",
+      "name": "When chat message received",
+      "webhookId": "REDACTED_WEBHOOK_ID"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "Workflow runs",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        48,
+        352
+      ],
+      "id": "aeb8f3c7-9ce8-48ae-8c28-ea53982cc7af",
+      "name": "Respond to Webhook"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent1": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Search records",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "AI Agent2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config": {
+      "main": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search records": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent3": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "AI Agent3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent2",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent2": {
+      "main": [
+        []
+      ]
+    },
+    "AI Agent4": {
+      "main": [
+        []
+      ]
+    },
+    "Code in JavaScript2": {
+      "main": [
+        [
+          {
+            "node": "AI Agent4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model3": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent4",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model4": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent3",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "0c1ca727-9450-4738-adef-847c68468614",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "REDACTED_INSTANCE_ID"
+  },
+  "id": "REDACTED_CREDENTIAL_ID",
+  "tags": []
+}

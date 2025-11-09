@@ -1,0 +1,1060 @@
+{
+  "name": "ENG_WORDS",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "Webhook_id",
+        "options": {
+          "rawBody": true
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        -160
+      ],
+      "id": "ba1a841f-9482-40cf-916a-16513088b298",
+      "name": "Webhook",
+      "webhookId": "WEBHOOK_ID"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-3.5-turbo",
+          "mode": "list",
+          "cachedResultName": "gpt-3.5-turbo"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        880,
+        80
+      ],
+      "id": "0e099e3e-d681-4d90-aafa-96b9ccdb260b",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "OPENAI_CREDENTIAL_ID",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Pobierz zawartość\nconst content = $json.body;\n\n// Regex do znajdowania dat w formacie DD.MM\nconst dateRegex = /(\\d{2}\\.\\d{2})/g;\n\n// Znajdź wszystkie daty\nconst dates = content.match(dateRegex) || [];\nconsole.log(`Znaleziono daty: ${dates.join(', ')}`);\n\n// Podziel zawartość po datach\nconst parts = content.split(/(?=\\d{2}\\.\\d{2})/);\n\n// Usuń pierwszą pustą część (przed pierwszą datą)\nconst validParts = parts.filter(part => {\n  const trimmed = part.trim();\n  return trimmed.length > 50 && /^\\d{2}\\.\\d{2}/.test(trimmed);\n});\n\nconsole.log(`Podzielono na ${validParts.length} lekcji`);\n\n// Zwróć każdą lekcję jako osobny item\nreturn validParts.map((part, index) => {\n  const dateMatch = part.match(/^(\\d{2}\\.\\d{2})/);\n  const lessonDate = dateMatch ? dateMatch[1] : `unknown_${index}`;\n  \n  return {\n    json: {\n      lesson_number: index + 1,\n      total_lessons: validParts.length,\n      date: lessonDate,\n      content: part.trim(),\n      preview: `${lessonDate}: ${part.trim().substring(0, 100)}...`,\n      char_count: part.trim().length\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        -160
+      ],
+      "id": "73ad159e-1a2a-4c39-93af-ec24b3588992",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Pobierz wszystkie wyniki z OpenAI\nconst allResults = $input.all();\n\n// HashMap do sprawdzania duplikatów\nconst uniqueVocabulary = new Map();\n\nallResults.forEach((result, index) => {\n  try {\n    const parsedResult = typeof result.json.text === 'string' \n      ? JSON.parse(result.json.text) \n      : result.json.text;\n    \n    if (parsedResult && parsedResult.lessons) {\n      parsedResult.lessons.forEach(lesson => {\n        if (lesson.vocabulary && Array.isArray(lesson.vocabulary)) {\n          lesson.vocabulary.forEach(vocab => {\n            if (vocab.english && vocab.polish) {\n              // Klucz: angielskie słowo (lowercase)\n              const key = vocab.english.trim().toLowerCase();\n              \n              // Sprawdź czy już istnieje\n              if (!uniqueVocabulary.has(key)) {\n                uniqueVocabulary.set(key, {\n                  english: vocab.english.trim(),\n                  polish: vocab.polish.trim(),\n                  lesson_date: lesson.date,\n                  first_occurrence: lesson.date\n                });\n              } else {\n                // Słowo już istnieje - możesz dodać logikę obsługi duplikatu\n                console.log(`Duplikat znaleziony: \"${key}\" w lekcji ${lesson.date} (pierwsze wystąpienie: ${uniqueVocabulary.get(key).first_occurrence})`);\n              }\n            }\n          });\n        }\n      });\n    }\n  } catch (error) {\n    console.log(`Błąd parsowania lekcji ${index + 1}:`, error);\n  }\n});\n\n// Konwertuj HashMap na array\nconst uniqueWords = Array.from(uniqueVocabulary.values());\n\nconsole.log(`Znaleziono ${uniqueWords.length} unikalnych słów`);\nconsole.log(`Usunięto ${allResults.reduce((total, result) => {\n  try {\n    const parsed = typeof result.json.text === 'string' ? JSON.parse(result.json.text) : result.json.text;\n    return total + (parsed?.lessons?.[0]?.vocabulary?.length || 0);\n  } catch {\n    return total;\n  }\n}, 0) - uniqueWords.length} duplikatów`);\n\n// Zwróć unikalne słowa jako osobne items dla PostgreSQL\nreturn uniqueWords.map(vocab => ({\n  json: vocab\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1140,
+        -160
+      ],
+      "id": "fd8d92f5-e1ba-43ef-8efd-990a48942759",
+      "name": "Code1",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "amount": 1
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        440,
+        -160
+      ],
+      "id": "9410b65b-7154-4ef8-bd54-7bcf42b67bd9",
+      "name": "Wait",
+      "webhookId": "WEBHOOK_ID"
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "vocabulary",
+          "mode": "list",
+          "cachedResultName": "vocabulary"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "english": "={{ $json.english }} ",
+            "polish": "={{ $json.polish }}",
+            "date": "={{ $json.lesson_date }}"
+          },
+          "matchingColumns": [
+            "polish",
+            "english"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "date",
+              "displayName": "date",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "polish",
+              "displayName": "polish",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "english",
+              "displayName": "english",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": false,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1360,
+        -160
+      ],
+      "id": "b44d05e2-77df-4230-a732-11f363ab1987",
+      "name": "Postgres",
+      "credentials": {
+        "postgres": {
+          "id": "POSTGRES_CREDENTIAL_ID",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Dodanie słówek do bazy danych\nNajpierw trzeba ściągnąć plik txt i później wywołać\n curl -X POST   -H \"Content-Type: text/plain\"   --data-binary @\"angielski.txt\"   http://localhost:5678/webhook/7d22bcc0-2af9-4de2-b0ca-063d6428e96f\n\n## Dodanie zadania do bazy tymczasowo\nNastępnie trzeba dodać zadanie do bazy tymczasowo, żeby było dostępne w bazie danych. \n\n## Sprawdzenie czy zadanie jest już w bazie danych\nNastępnie trzeba sprawdzić czy zadanie jest już w bazie danych, żeby nie było duplikatów.\n\n## Wysłanie wiadomości na Telegrama\nNa koniec trzeba wysłać wiadomość na Telegrama z zadaniem.",
+        "height": 580,
+        "width": 2060
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -280,
+        -340
+      ],
+      "typeVersion": 1,
+      "id": "42e8ffdd-53a0-4944-8c8b-3898dde09b7c",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 7,
+              "triggerAtMinute": 30
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -240,
+        500
+      ],
+      "id": "0dda50d8-8df1-4aa7-b199-d2e98463b0db",
+      "name": "Schedule Trigger",
+      "notesInFlow": false
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT english, polish, date \nFROM vocabulary \nORDER BY RANDOM() \nLIMIT 4;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -20,
+        500
+      ],
+      "id": "5385cceb-a7e3-4743-b1d9-fd5f3bca52ff",
+      "name": "Postgres1",
+      "credentials": {
+        "postgres": {
+          "id": "POSTGRES_CREDENTIAL_ID",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        420,
+        740
+      ],
+      "id": "162c2401-1073-4d7e-82c8-2fcd20164d3b",
+      "name": "OpenAI Chat Model1",
+      "credentials": {
+        "openAiApi": {
+          "id": "OPENAI_CREDENTIAL_ID",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Na podstawie tych słów angielskich:\n\n{{ $json.data[0].english }}\n{{ $json.data[0].polish }}\n{{ $json.data[1].english }}\n{{ $json.data[1].polish }}\n{{ $json.data[2].english }}\n{{ $json.data[2].polish }}\n{{ $json.data[3].english }}\n{{ $json.data[3].polish }}\n\nStwórz JEDNO kreatywne zadanie używając WSZYSTKICH słów powyżej.\n\nWYMAGANIA:\n- Zadanie 5-10 minut\n- Jasne instrukcje  \n- Wszystkie słowa muszą być użyte\n- Praktyczne zastosowanie\n\nWYBIERZ LOSOWO JEDEN TYP:\n\n🎬 MINI-FILM: Napisz scenariusz 4-5 zdań\n📱 SOCIAL POST: Instagram post + opis zdjęcia  \n🕵️ KRYMINALNY RAPORT: Opisz sprawę policyjną\n🎮 GAME LEVEL: Opisz poziom w grze\n💬 DIALOG: Rozmowa 2 osób (4-6 linijek)\n📰 NEWS ARTICLE: Krótki artykuł prasowy\n🎪 SITCOM: Zabawna scena z serialu\n\nFORMAT ODPOWIEDZI:\n🎯 **[NAZWA ZADANIA]**\n\n📋 **Zadanie:**\n[Konkretny opis co ma zrobić - max 2-3 zdania]\n\n📝 **Instrukcje:**\n1. [krok 1]\n2. [krok 2] \n3. [krok 3]\n\n⏱️ **Czas:** 5-10 minut\n🏆 **Cel:** [co ma osiągnąć]\n\n**Słowa do użycia:**\n- [english] - [polish]\n- [english] - [polish]\n- [english] - [polish]\n- [english] - [polish]\n\nPowodzenia! 🚀",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        420,
+        500
+      ],
+      "id": "a383940b-094f-4ff8-ad9e-ca23b36117a1",
+      "name": "LLM words"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Przekonwertuj tę lekcję na JSON. To lekcja {{ $json.lesson_number }} z {{ $json.total_lessons }}.\n\n{{ $json.content }}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "Jesteś parserem danych. Zwracaj tylko czysty JSON bez komentarzy.\n\nFormat: \n{\n  \"lessons\": [\n    {\n      \"date\": \"DD.MM\",\n      \"vocabulary\": [{\"english\": \"word\", \"polish\": \"słowo\"}]\n    }\n  ]\n}\n\nZasady:\n- Vocabulary: podziel angielskie i polskie słowa (szukaj polskich znaków: ąćęłńóśźż)\n- Ignoruj sekcje Grammar i Pronunciation\n- Pomijaj puste sekcje\n- Jedna lekcja = jedna data"
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        680,
+        -160
+      ],
+      "id": "d6123533-1058-4f2b-a923-86e2adacd0c3",
+      "name": "JSON convert"
+    },
+    {
+      "parameters": {
+        "chatId": "Telegram_id",
+        "text": "={{ $('LLM words').item.json.text }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1000,
+        500
+      ],
+      "id": "c894d510-4fef-44c8-9a77-a2576f9a7763",
+      "name": "Telegram1",
+      "webhookId": "TELEGRAM_WEBHOOK_ID",
+      "credentials": {
+        "telegramApi": {
+          "id": "TELEGRAM_CREDENTIAL_ID",
+          "name": "English_bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "destinationFieldName": "=data",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        200,
+        500
+      ],
+      "id": "561a9428-038a-4cef-8c41-2d80ea3b0edc",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -260,
+        1160
+      ],
+      "id": "fc0090c0-7e5b-40de-8214-5171c9c801cf",
+      "name": "Telegram Trigger",
+      "webhookId": "WEBHOOK_ID",
+      "credentials": {
+        "telegramApi": {
+          "id": "TELEGRAM_CREDENTIAL_ID",
+          "name": "English_bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1200,
+        1340
+      ],
+      "id": "49f335b0-ce92-4a5c-9158-3d4f5870858c",
+      "name": "OpenAI Chat Model2",
+      "credentials": {
+        "openAiApi": {
+          "id": "OPENAI_CREDENTIAL_ID",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.message.text }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "exists",
+                      "singleValue": true
+                    },
+                    "id": "f9bde876-f99d-49d0-9942-da009c00cbef"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Text"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "5b59ae49-3820-4daf-9a6c-d79732eee05d",
+                    "leftValue": "={{ $json.message.voice.mime_type }}",
+                    "rightValue": "audio/ogg",
+                    "operator": {
+                      "type": "string",
+                      "operation": "exists",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Audio"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -20,
+        1160
+      ],
+      "id": "e5006a93-458b-4d89-b559-e74115c1af5a",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $json.message.voice.file_id }}"
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        260,
+        1240
+      ],
+      "id": "05e198bb-99ed-48c3-8261-51e9493bc988",
+      "name": "Telegram",
+      "webhookId": "WEBHOOK_ID",
+      "credentials": {
+        "telegramApi": {
+          "id": "TELEGRAM_CREDENTIAL_ID",
+          "name": "English_bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "operation": "transcribe",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        480,
+        1240
+      ],
+      "id": "56965c0d-1352-4e1c-8186-8bb5cf35f8f8",
+      "name": "OpenAI",
+      "credentials": {
+        "openAiApi": {
+          "id": "OPENAI_CREDENTIAL_ID",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "6325a1e5-806d-4dbd-a906-6be065153d24",
+              "name": "message.text",
+              "value": "={{ $json.message.text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        360,
+        1020
+      ],
+      "id": "e6633412-3316-4aef-824b-3e08a5d1d5cb",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        780,
+        1120
+      ],
+      "id": "e28546fc-6f75-4be9-a4c4-e940162a2300",
+      "name": "Aggregate1"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Oceń tę odpowiedź w języku angielskim na zadanie: {{ $json.task_prompt }}\nOdpowiedź ucznia:\n{{ $json.data[0].text }}\nWymagane słownictwo:\n\nang {{ $json.word1_en }} pl {{ $json.word1_pl }}\nang {{ $json.word2_en }} pl {{ $json.word2_pl }}\nang {{ $json.word3_en }} pl {{ $json.word3_pl }}\nang {{ $json.word4_en }} pl {{ $json.word4_pl }}\nOceń zgodnie z kryteriami.",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "Jesteś nauczycielem angielskiego. Oceniaj odpowiedzi uczniów krótko i konkretnie.  FORMAT OCENY: 📊 PUNKTY: [X]/100  CO JEST ŹLE: - [błąd 1] - [błąd 2]  - [błąd 3]  POPRAWKA: [poprawiona wersja jeśli potrzeba]  Bądź szczery ale pomocny. Krótko i na temat."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        1260,
+        1120
+      ],
+      "id": "4f983dd4-5039-4dcc-bcaa-aa6fed23f7c3",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "daily_tasks",
+          "mode": "list",
+          "cachedResultName": "daily_tasks"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": 0,
+            "task_prompt": "={{ $json.text }}",
+            "word1_en": "={{ $('Aggregate').item.json.data[0].english }}",
+            "word1_pl": "={{ $('Aggregate').item.json.data[0].polish }}",
+            "word2_en": "={{ $('Aggregate').item.json.data[1].english }}",
+            "word2_pl": "={{ $('Aggregate').item.json.data[1].polish }}",
+            "word3_en": "={{ $('Aggregate').item.json.data[2].english }}",
+            "word3_pl": "={{ $('Aggregate').item.json.data[2].polish }}",
+            "word4_en": "={{ $('Aggregate').item.json.data[3].english }}",
+            "word4_pl": "={{ $('Aggregate').item.json.data[3].polish }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "task_prompt",
+              "displayName": "task_prompt",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "word1_en",
+              "displayName": "word1_en",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "word1_pl",
+              "displayName": "word1_pl",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "word2_en",
+              "displayName": "word2_en",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "word2_pl",
+              "displayName": "word2_pl",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "word3_en",
+              "displayName": "word3_en",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "word3_pl",
+              "displayName": "word3_pl",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "word4_en",
+              "displayName": "word4_en",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "word4_pl",
+              "displayName": "word4_pl",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        800,
+        500
+      ],
+      "id": "5a2a75e7-e8ac-4438-b3fd-44ce7dec63a9",
+      "name": "Dodanie zadanie do bazy tymczasowo",
+      "credentials": {
+        "postgres": {
+          "id": "POSTGRES_CREDENTIAL_ID",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "daily_tasks",
+          "mode": "list",
+          "cachedResultName": "daily_tasks"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1000,
+        1120
+      ],
+      "id": "af1cd6b3-4b32-41a8-8e9a-ca4ef5c0bfa6",
+      "name": "Postgres2",
+      "credentials": {
+        "postgres": {
+          "id": "POSTGRES_CREDENTIAL_ID",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "deleteTable",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "daily_tasks",
+          "mode": "list",
+          "cachedResultName": "daily_tasks"
+        },
+        "deleteCommand": "delete",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1680,
+        1120
+      ],
+      "id": "d4c59e6c-5fdf-4cec-8fc0-19041581a447",
+      "name": "Postgres3",
+      "credentials": {
+        "postgres": {
+          "id": "POSTGRES_CREDENTIAL_ID",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "Chat_id",
+        "text": "={{ $('Basic LLM Chain').item.json.text }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1920,
+        1120
+      ],
+      "id": "6ae51a9d-cbb8-4cac-bf19-888e0a452b33",
+      "name": "Telegram2",
+      "webhookId": "WEBHOOK_ID",
+      "credentials": {
+        "telegramApi": {
+          "id": "TELEGRAM_CREDENTIAL_ID",
+          "name": "English_bot"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "JSON convert",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "JSON convert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code1": {
+      "main": [
+        [
+          {
+            "node": "Postgres",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Postgres1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres1": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "LLM words",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "JSON convert": {
+      "main": [
+        [
+          {
+            "node": "Code1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LLM words": {
+      "main": [
+        [
+          {
+            "node": "Dodanie zadanie do bazy tymczasowo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "LLM words",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram1": {
+      "main": [
+        []
+      ]
+    },
+    "OpenAI Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram": {
+      "main": [
+        [
+          {
+            "node": "OpenAI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI": {
+      "main": [
+        [
+          {
+            "node": "Aggregate1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Aggregate1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate1": {
+      "main": [
+        [
+          {
+            "node": "Postgres2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Dodanie zadanie do bazy tymczasowo": {
+      "main": [
+        [
+          {
+            "node": "Telegram1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres2": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Postgres3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres3": {
+      "main": [
+        [
+          {
+            "node": "Telegram2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "a3686a74-167d-4acf-aa51-70db14e2e881",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "REDACTED_INSTANCE_ID"
+  },
+  "id": "REDACTED_CREDENTIAL_ID",
+  "tags": []
+}
